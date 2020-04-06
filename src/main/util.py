@@ -39,8 +39,9 @@ def compute_similarity_transform(real_kp3d, pred_kp3d):
         # SVD is terrifyingly slow on GPUs, use cpus for this. Makes it a lot faster.
         s, u, v = tf.linalg.svd(K, full_matrices=True)
 
-    # Construct identity that fixes the orientation of R to get det(R)=1.
-    det = tf.sign(tf.linalg.det(tf.matmul(u, v, transpose_b=True)))
+        # Construct identity that fixes the orientation of R to get det(R)=1.
+        det = tf.sign(tf.linalg.det(tf.matmul(u, v, transpose_b=True)))
+
     det = tf.expand_dims(tf.expand_dims(det, -1), -1)
     shape = tf.shape(u)
     identity = tf.eye(shape[1], batch_shape=[shape[0]])

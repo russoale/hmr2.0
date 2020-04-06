@@ -335,7 +335,7 @@ class Dataset(object):
         if not isinstance(example, list):
             example = [example]
 
-        return tf.data.TFRecordDataset(example).map(self._parse_inference).map(self._convert_and_scale)
+        return tf.data.TFRecordDataset(example).map(self._parse_inference).map(self._convert_and_scale_all)
 
     def _parse_inference(self, example_proto):
         feature_map = {

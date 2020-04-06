@@ -98,6 +98,7 @@ class Mpii3dConverter(TFRecordConverter):
 
         kp2d = np.squeeze(kp2d)
         kp3d = np.squeeze(kp3d)
+        kp3d = np.divide(kp3d, np.float32(1000.), dtype=np.float32)  # Fix units: mm -> meter
 
         return img_dir, image_ids, kp2d, kp3d
 

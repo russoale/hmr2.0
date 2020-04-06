@@ -93,8 +93,12 @@ class Model:
 
         # if a checkpoint exists, restore the latest checkpoint.
         if checkpoint_manager.latest_checkpoint:
-            self.checkpoint.restore(checkpoint_manager.latest_checkpoint).expect_partial()
-            print('Latest checkpoint restored!!')
+            restore_path = self.config.RESTORE_PATH
+            if restore_path is None:
+                restore_path = checkpoint_manager.latest_checkpoint
+
+            self.checkpoint.restore(restore_path).expect_partial()
+            print('Checkpoint restored from {}'.format(restore_path))
 
     def _setup_summary(self):
         self.summary_path = os.path.join(self.config.LOG_DIR, "hmr2.0")
@@ -341,9 +345,9 @@ class Model:
 
         print('Time taken for testing {} sec\n'.format(time.time() - start))
 
-        all_kp3d_mpjpe = tf.reshape(tf.convert_to_tensor(all_kp3d_mpjpe), (-1, self.config.NUM_KP3D))
-        all_kp3d_mpjpe_aligned = tf.reshape(tf.convert_to_tensor(all_kp3d_mpjpe_aligned), (-1, self.config.NUM_KP3D))
-        sequences = tf.reshape(tf.convert_to_tensor(sequences), (-1,))
+        all_kp3d_mpjpe = tf.reshape(tf.stack(all_kp3d_mpjpe), (-1, self.config.NUM_KP3D))
+        all_kp3d_mpjpe_aligned = tf.reshape(tf.stack(all_kp3d_mpjpe_aligned), (-1, self.config.NUM_KP3D))
+        sequences = tf.reshape(tf.stack(sequences), (-1,))
 
         result_dict = {
             "kp3d_mpjpe": all_kp3d_mpjpe,
@@ -352,10 +356,10 @@ class Model:
         }
 
         if vis:
-            all_thetas = tf.reshape(tf.convert_to_tensor(all_thetas), (-1, self.config.NUM_SMPL_PARAMS))
-            all_vertices = tf.reshape(tf.convert_to_tensor(all_vertices), (-1, self.config.NUM_VERTICES, 3))
-            all_kp2d = tf.reshape(tf.convert_to_tensor(all_kp2d), (-1, self.config.NUM_KP2D, 2))
-            all_rotation = tf.reshape(tf.convert_to_tensor(all_rotation), (-1, self.config.NUM_JOINTS_GLOBAL, 3, 3))
+            all_thetas = tf.reshape(tf.stack(all_thetas), (-1, self.config.NUM_SMPL_PARAMS))
+            all_vertices = tf.reshape(tf.stack(all_vertices), (-1, self.config.NUM_VERTICES, 3))
+            all_kp2d = tf.reshape(tf.stack(all_kp2d), (-1, self.config.NUM_KP2D, 2))
+            all_rotation = tf.reshape(tf.stack(all_rotation), (-1, self.config.NUM_JOINTS_GLOBAL, 3, 3))
 
             result_dict.update({
                 "thetas": all_thetas,

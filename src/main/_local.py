@@ -1,19 +1,18 @@
-from datetime import datetime
-
 import os
+from datetime import datetime
 
 from main.config import Config
 from main.model import Model
 
 
 class LocalConfig(Config):
-    ROOT_DATA_DIR = os.path.abspath('../../')
+    ROOT_DATA_DIR = os.path.abspath(os.path.join(__file__, '..', '..', '..'))
 
-    LOG_DIR = os.path.join(ROOT_DIR, 'logs', datetime.now().strftime("%d%m%Y-%H%M%S"))
-    DATA_DIR = os.path.join(ROOT_DIR, 'src', 'tests', 'files')
-    SMPL_DATA_DIR = os.path.join(ROOT_DIR, 'src', 'tests', 'files')
-    SMPL_MODEL_PATH = os.path.join(ROOT_DIR, 'models', 'neutral_smpl_coco_regressor.pkl')
-    SMPL_MEAN_THETA_PATH = os.path.join(ROOT_DIR, 'models', 'neutral_smpl_mean_params.h5')
+    LOG_DIR = os.path.join(ROOT_DATA_DIR, 'logs', datetime.now().strftime("%d%m%Y-%H%M%S"))
+    DATA_DIR = os.path.join(ROOT_DATA_DIR, 'src', 'tests', 'files')
+    SMPL_DATA_DIR = os.path.join(ROOT_DATA_DIR, 'src', 'tests', 'files')
+    SMPL_MODEL_PATH = os.path.join(ROOT_DATA_DIR, 'models', 'neutral_smpl_coco_regressor.pkl')
+    SMPL_MEAN_THETA_PATH = os.path.join(ROOT_DATA_DIR, 'models', 'neutral_smpl_mean_params.h5')
 
     DATASETS = ['dataset']
     SMPL_DATASETS = ['smpl']

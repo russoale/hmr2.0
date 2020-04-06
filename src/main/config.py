@@ -25,8 +25,20 @@ class Config(object):
     # path to save training models to
     LOG_DIR = os.path.join(ROOT_DATA_DIR, 'logs', datetime.now().strftime("%d%m%Y-%H%M%S"))
 
+    # path to specific checkpoint to be restored
+    # if LOG_DIR is set to specific training and RESTORE_PATH is None
+    # per default last saved checkpoint will be restored
+    # subclass config to override, see example in evaluate.ipynb
+    RESTORE_PATH = None
+
     # path to saved dataset in tf record format
+    # folder names should be same as defined in DATASET config (see below):
+    # e.g. DATASETS = ['coco', 'mpii_3d', 'h36m']
     DATA_DIR = os.path.join(ROOT_DATA_DIR, 'new_records')
+
+    # path to saved smpl data in tf record format
+    # folder names should be same as defined in SMPL_DATASETS config (see below):
+    # e.g. SMPL_DATASETS = ['cmu', 'joint_lim']
     SMPL_DATA_DIR = os.path.join(ROOT_DATA_DIR, 'new_records', 'smpl')
 
     # path to the neutral smpl model
@@ -73,7 +85,7 @@ class Config(object):
     NUM_VALIDATION_SAMPLES = 10922
 
     # number of test samples, use `test_count_all_samples` in test_dataset.py to determine
-    NUM_TEST_SAMPLES = 43284
+    NUM_TEST_SAMPLES = 42369
 
     # effective batch size
     BATCH_SIZE = 64
