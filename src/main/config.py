@@ -97,7 +97,8 @@ class Config(object):
     SEED = 42
 
     # list of datasets to use for training
-    DATASETS = ['lsp', 'lsp_ext', 'mpii', 'coco', 'mpii_3d', 'h36m']
+    # DATASETS = ['lsp', 'lsp_ext', 'mpii', 'coco', 'mpii_3d', 'h36m']
+    DATASETS = ['lsp', 'lsp_ext', 'mpii', 'mpii_3d', 'h36m']  # skip coco due to missing extremities annotation
 
     # datasets to use for adversarial prior training
     SMPL_DATASETS = ['cmu', 'joint_lim']  # , 'H3.6']
