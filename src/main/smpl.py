@@ -9,12 +9,9 @@ from main.util import batch_rodrigues, batch_global_rigid_transformation
 
 
 class Smpl(layers.Layer):
-    """smpl layer for models generation
-    Args:
-        get_skin: if True smpl call returns (vertices, joints, rotations) else joints
-    """
+    """smpl layer for models generation"""
 
-    def __init__(self, get_skin=True):
+    def __init__(self):
         super(Smpl, self).__init__()
 
         self.config = Config()
@@ -27,8 +24,6 @@ class Smpl(layers.Layer):
         def tf_variable(value, name):
             converted = tf.convert_to_tensor(value=value, dtype=tf.float32)
             return tf.Variable(converted, name=name, trainable=False)
-
-        self.get_skin = get_skin
 
         # Mean template vertices: [6890 x 3]
         self.vertices_template = tf_variable(model["v_template"], name="vertices_template")
@@ -71,7 +66,7 @@ class Smpl(layers.Layer):
             self.joint_transformed: [batch x 24 x 3] joint location after shaping
                                                     & posing with beta and theta
         Returns:
-            vertices: [batch x 6980 x 3] if get_skin is True
+            vertices: [batch x 6980 x 3]
             joints: [batch x (19 || 14) x 3] joint locations, depending on joint_type
             rotations: [batch x 24 x 3 x 3] rotation matrices by theta
         """
@@ -119,17 +114,11 @@ class Smpl(layers.Layer):
         # Get final coco or lsp joints:
         joints = self.compute_joints(vertices, self.joint_regressor)
 
-        if self.get_skin:
-            return vertices, joints, rotations
-        else:
-            return joints
+        return vertices, joints, rotations
 
     def compute_output_shape(self, input_shape):
         num_joints = 19 if self.config.JOINT_TYPE == 'cocoplus' else 14
-        if self.get_skin:
-            return (None, 6890, 3), (None, num_joints, 3), (None, self.config.NUM_JOINTS_GLOBAL, 3, 3)
-        else:
-            return None, num_joints, 3
+        return (None, 6890, 3), (None, num_joints, 3), (None, self.config.NUM_JOINTS_GLOBAL, 3, 3)
 
     def compute_joints(self, vertices, regressor):
         """computes joint location from vertices by regressor

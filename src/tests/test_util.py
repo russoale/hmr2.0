@@ -1,11 +1,9 @@
-import os
 import sys
 
 import numpy as np
+import os
 
 # to make run from console for module import
-from tests._helper import get_kp3d
-
 sys.path.append(os.path.abspath('..'))
 
 # tf INFO and WARNING messages are not printed
@@ -14,28 +12,29 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 import tensorflow as tf
 
 from main.util import batch_orthographic_projection, batch_skew_symmetric, batch_rodrigues, \
-    batch_global_rigid_transformation, align_by_pelvis, compute_similarity_transform
-from tests._config import TestConfig
+    batch_global_rigid_transformation, batch_align_by_pelvis, batch_compute_similarity_transform
+from main.local import LocalConfig
+from tests._helper import get_kp3d
 
 
 class TestUtil(tf.test.TestCase):
 
     def setUp(self):
         super(TestUtil, self).setUp()
-        self.config = TestConfig()
+        self.config = LocalConfig()
 
-    def test_compute_similarity_transform(self):
+    def test_batch_compute_similarity_transform(self):
         pred_3d, real_3d = get_kp3d(self.config)
-        output = compute_similarity_transform(real_3d, pred_3d)
+        output = batch_compute_similarity_transform(real_3d, pred_3d)
         mean = tf.reduce_mean(output)
         expected = np.array(1.806683, dtype=np.float32)
 
         self.assertAllCloseAccordingToType(expected, mean)
         self.assertEqual((self.config.BATCH_SIZE, self.config.NUM_KP3D, 3), output.shape)
 
-    def test_align_by_pelvis(self):
+    def test_batch_align_by_pelvis(self):
         joints_3d = tf.ones((self.config.BATCH_SIZE, self.config.NUM_KP3D, 3))
-        output = align_by_pelvis(joints_3d)
+        output = batch_align_by_pelvis(joints_3d)
         expected = tf.zeros((self.config.BATCH_SIZE, self.config.NUM_KP3D, 3))
 
         self.assertAllCloseAccordingToType(expected, output)

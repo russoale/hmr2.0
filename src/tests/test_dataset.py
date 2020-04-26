@@ -14,13 +14,13 @@ import numpy as np
 import tensorflow as tf
 
 from main.dataset import Dataset
-from tests._config import TestConfig
+from main.local import LocalConfig
 
 
 class TestDataset(tf.test.TestCase):
 
     def test_dataset_train(self):
-        config = TestConfig()
+        config = LocalConfig()
         dataset = Dataset().get_train()
         for batch in dataset.take(1):
             image = ((batch[0].numpy()[0, :, :, :] + 1) / 2 * 255).astype(np.int32)
@@ -57,7 +57,7 @@ class TestDataset(tf.test.TestCase):
             # helpers.show_image(image, kp2d, vis)
 
     def test_dataset_val(self):
-        config = TestConfig()
+        config = LocalConfig()
         dataset = Dataset().get_val()
         for batch in dataset.take(1):
             image = ((batch[0].numpy()[0, :, :, :] + 1) / 2 * 255).astype(np.int32)
@@ -94,7 +94,7 @@ class TestDataset(tf.test.TestCase):
             # helpers.show_image(image, kp2d, vis)
 
     def test_dataset_test(self):
-        config = TestConfig()
+        config = LocalConfig()
         dataset = Dataset().get_test()
         for batch in dataset.take(1):
             image = ((batch[0].numpy()[0, :, :, :] + 1) / 2 * 255).astype(np.int32)
@@ -114,15 +114,15 @@ class TestDataset(tf.test.TestCase):
             self.assertEqual('TS1', sequence)
 
     def test_dataset_smpl(self):
-        config = TestConfig()
+        config = LocalConfig()
         dataset = Dataset().get_smpl()
         for batch in dataset.take(1):
-            self.assertEqual((config.BATCH_SIZE, config.NUM_SMPL_PARAMS), batch.shape)
+            shape = (config.BATCH_SIZE * config.ITERATIONS, (config.NUM_POSE_PARAMS + config.NUM_SHAPE_PARAMS))
+            self.assertEqual(shape, batch.shape)
 
-            pose = batch[0].numpy()[
-                   config.NUM_CAMERA_PARAMS:(config.NUM_CAMERA_PARAMS + config.NUM_POSE_PARAMS)]
+            pose = batch[0].numpy()[:config.NUM_POSE_PARAMS:]
             mean = tf.reduce_mean(pose)
-            expected = np.array(0.030463908, dtype=np.float32)
+            expected = np.array(0.0411809, dtype=np.float32)
             self.assertAllCloseAccordingToType(expected, mean)
 
             shape = batch[0].numpy()[-config.NUM_SHAPE_PARAMS:]

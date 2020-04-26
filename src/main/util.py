@@ -5,7 +5,7 @@ import tensorflow as tf
 from main.config import Config
 
 
-def compute_similarity_transform(real_kp3d, pred_kp3d):
+def batch_compute_similarity_transform(real_kp3d, pred_kp3d):
     """Computes a similarity transform (sR, trans) that takes
         a set of 3D points S1 (3 x N) closest to a set of 3D points S2,
         where R is an 3x3 rotation matrix, trans 3x1 translation, u scale.
@@ -64,7 +64,7 @@ def compute_similarity_transform(real_kp3d, pred_kp3d):
     return tf.transpose(aligned_kp3d, perm=[0, 2, 1])
 
 
-def align_by_pelvis(kp3d):
+def batch_align_by_pelvis(kp3d):
     """Assumes kp3d is [batch x 14 x 3] in LSP order. Then hips are id [2, 3].
        Takes mid point of these points, then subtracts it.
     Args:
@@ -80,8 +80,8 @@ def align_by_pelvis(kp3d):
 def batch_orthographic_projection(kp3d, camera):
     """computes reprojected 3d to 2d keypoints
     Args:
-        kp3d: [batch x K x 3]
-        camera: [3]
+        kp3d:   [batch x K x 3]
+        camera: [batch x 3]
     Returns:
         kp2d: [batch x K x 2]
     """
@@ -243,4 +243,4 @@ def load_mean_theta():
     mean[0, 0] = 0.9
     mean[:, config.NUM_CAMERA_PARAMS:] = np.hstack((mean_pose, mean_shape))
     mean = tf.cast(mean, dtype=tf.float32)
-    return tf.tile(mean, [config.BATCH_SIZE, 1])
+    return mean

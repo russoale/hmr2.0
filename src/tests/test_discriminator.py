@@ -13,14 +13,14 @@ import tensorflow as tf
 
 from main.discriminator import ShapeDiscriminator, CommonPoseDiscriminator, SingleJointDiscriminator, \
     FullPoseDiscriminator, Discriminator
-from tests._config import TestConfig
+from main.local import LocalConfig
 
 
 class TestDiscriminator(tf.test.TestCase):
 
     def setUp(self):
         super(TestDiscriminator, self).setUp()
-        self.config = TestConfig()
+        self.config = LocalConfig()
         self.batch_size = self.config.BATCH_SIZE
         self.num_kp = self.config.NUM_JOINTS
 
@@ -65,11 +65,11 @@ class TestDiscriminator(tf.test.TestCase):
         self.assertEqual(outputs.shape, (self.batch_size, 1))
 
     def test_discriminator(self):
-        inputs = tf.ones((self.batch_size, self.config.NUM_SMPL_PARAMS))
+        inputs = tf.ones((self.batch_size, (self.config.NUM_JOINTS * 9 + self.config.NUM_SHAPE_PARAMS)))
         dis = Discriminator()
         outputs = dis(inputs)
         mean = tf.reduce_mean(outputs)
-        expected = np.array(0.0795230, dtype=np.float32)
+        expected = np.array(0.184970, dtype=np.float32)
 
         self.assertAllCloseAccordingToType(expected, mean)
         self.assertEqual(outputs.shape, (self.batch_size, 25))

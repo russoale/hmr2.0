@@ -1,6 +1,5 @@
-import sys
-
 import os
+import sys
 
 # to make run from console for module import
 sys.path.append(os.path.abspath('..'))
@@ -10,7 +9,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 import tensorflow as tf
 
-from tests._config import TestConfig
+from main.local import LocalConfig
 from main.smpl import Smpl
 
 
@@ -18,11 +17,11 @@ class TestSmpl(tf.test.TestCase):
 
     def setUp(self):
         super(TestSmpl, self).setUp()
-        config = TestConfig()
+        config = LocalConfig()
         self.inputs = tf.ones((config.BATCH_SIZE, (config.NUM_POSE_PARAMS + config.NUM_SHAPE_PARAMS)))
 
     def test_smpl_loaded_correctly(self):
-        smpl = Smpl(get_skin=False)
+        smpl = Smpl()
         self.assertEqual((6890, 3), smpl.vertices_template.shape)
         self.assertEqual((10, 20670), smpl.shapes.shape)
         self.assertEqual((6890, 24), smpl.smpl_joint_regressor.shape)
@@ -30,12 +29,7 @@ class TestSmpl(tf.test.TestCase):
         self.assertEqual((6890, 24), smpl.lbs_weights.shape)
         self.assertEqual((6890, 19), smpl.joint_regressor.shape)
 
-    def test_smpl_get_skin_false(self):
-        smpl = Smpl(get_skin=False)
-        output = smpl(self.inputs)
-        self.assertEqual((2, 19, 3), output.shape)
-
-    def test_smpl_get_skin_true(self):
+    def test_smpl_output(self):
         smpl = Smpl()
         outputs = smpl(self.inputs)
 

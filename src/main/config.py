@@ -3,9 +3,8 @@
 # the configurations you need to change.
 
 import json
-from datetime import datetime
-
 import os
+from datetime import datetime
 
 
 class Config(object):
@@ -14,6 +13,7 @@ class Config(object):
     def __new__(cls):
         if Config.__instance is None:
             Config.__instance = object.__new__(cls)
+            Config.__instance.__initialized = False
 
         return Config.__instance
 
@@ -62,30 +62,8 @@ class Config(object):
     NUM_KP2D = 19 if JOINT_TYPE == 'cocoplus' else 14
     NUM_KP3D = 14
 
-    # if set to True, no adversarial prior is trained = monsters
-    ENCODER_ONLY = False
-
-    # set True to use 3D labels
-    USE_3D = True
-
-    # ------Training settings:------
-    #
-    # set default for training mode
-    TRAINING = True
-
     # number of epochs to train
     EPOCHS = 55
-
-    # number of training samples, use `test_count_all_samples` in test_dataset.py to determine
-    NUM_SAMPLES = 422445
-
-    # number of validation samples, use `test_count_all_samples` in test_dataset.py to determine
-    # For validation coco val set for 2d and for 3d subject 9 from h36m was used
-    # (all sequences but only first camera perspective)
-    NUM_VALIDATION_SAMPLES = 10922
-
-    # number of test samples, use `test_count_all_samples` in test_dataset.py to determine
-    NUM_TEST_SAMPLES = 42369
 
     # effective batch size
     BATCH_SIZE = 64
@@ -97,20 +75,28 @@ class Config(object):
     SEED = 42
 
     # list of datasets to use for training
-    # DATASETS = ['lsp', 'lsp_ext', 'mpii', 'coco', 'mpii_3d', 'h36m']
-    DATASETS = ['lsp', 'lsp_ext', 'mpii', 'mpii_3d', 'h36m']  # skip coco due to missing extremities annotation
+    # DATASETS = ['lsp', 'lsp_ext', 'mpii', 'coco', 'mpii_3d', 'h36m']  # paired setting, except h36m mosh not available
+    DATASETS = ['lsp', 'lsp_ext', 'coco', 'mpii']  # unpaired setting
 
     # datasets to use for adversarial prior training
-    SMPL_DATASETS = ['cmu', 'joint_lim']  # , 'H3.6']
+    SMPL_DATASETS = ['cmu', 'joint_lim']  # , 'h36m']
+
+    # if set to True, no adversarial prior is trained = monsters
+    ENCODER_ONLY = False
+
+    # set True to use 3D labels
+    USE_3D = False
 
     # ------Hyper parameters:------
     #
-    # encoder learning rate
-    ENCODER_LEARNING_RATE = 1e-5
-    # encoder weight decay
-    ENCODER_WEIGHT_DECAY = 1e-4
-    # weight on encoder loss
-    ENCODER_LOSS_WEIGHT = 60.
+    # generator learning rate
+    GENERATOR_LEARNING_RATE = 1e-5
+    # generator weight decay
+    GENERATOR_WEIGHT_DECAY = 1e-4
+    # weight on generator 2d loss
+    GENERATOR_2D_LOSS_WEIGHT = 60.
+    # weight on generator 3d loss
+    GENERATOR_3D_LOSS_WEIGHT = 60.
 
     # adversarial prior learning rate
     DISCRIMINATOR_LEARNING_RATE = 1e-4
@@ -118,9 +104,6 @@ class Config(object):
     DISCRIMINATOR_WEIGHT_DECAY = 1e-4
     # weight on discriminator
     DISCRIMINATOR_LOSS_WEIGHT = 1
-
-    # weight on theta regressor
-    REGRESSOR_LOSS_WEIGHT = 60.
 
     # ------Data augmentation:------
     #
@@ -157,6 +140,70 @@ class Config(object):
 
     # total number of vertices
     NUM_VERTICES = 6890
+
+    def __init__(self):
+        if self.__initialized:
+            return
+
+        self.__initialized = True
+
+        # number of training samples, use `test_count_all_samples` in test_dataset.py to determine
+        self.NUM_TRAINING_SAMPLES = self.count_samples_of(self.DATASETS, 'train')
+
+        # number of smpl training samples
+        self.NUM_TRAIN_SMPL_SAMPLES = self.count_samples_of(self.SMPL_DATASETS, 'train')
+
+        # number of validation samples, use `test_count_all_samples` in test_dataset.py to determine
+        # For validation coco val set for 2d and for 3d subject 9 from h36m was used
+        # (all sequences but only first camera perspective)
+        self.NUM_VALIDATION_SAMPLES = self.count_samples_of(self.DATASETS, 'val')
+
+        # number of test samples, use `test_count_all_samples` in test_dataset.py to determine
+        self.NUM_TEST_SAMPLES = self.count_samples_of(self.DATASETS, 'test')
+
+    @staticmethod
+    def count_samples_of(datasets, split):
+        """Numbers need to be provided after tf record generation (see `inspect.ipynb`)
+        Args:
+            datasets: list of dataset names used for training
+            split: train|val, define which split to use
+        Returns:
+            total_number: int, total number of training samples
+        """
+        train_samples_per_dataset = {
+            'lsp': 999,
+            'lsp_ext': 9984,
+            'mpii': 17537,
+            'coco': 116601,
+            'mpii_3d': 166982,
+            'h36m': 113231,
+
+            # SMPL/MOSH:
+            'cmu': 3934266,
+            'joint_lim': 181967,
+        }
+
+        val_samples_per_dataset = {
+            'lsp': 999,
+            'coco': 4802,
+            'h36m': 6120,
+        }
+
+        test_samples_per_dataset = {
+            'mpii_3d': 1955,
+            'h36m': 40414,
+        }
+
+        if split == 'train':
+            samples = train_samples_per_dataset
+        elif split == 'val':
+            samples = val_samples_per_dataset
+        elif split == 'test':
+            samples = test_samples_per_dataset
+        else:
+            raise Exception('unknown split')
+
+        return sum([samples[d] for d in datasets if d in samples.keys()])
 
     def save_config(self):
         if not os.path.exists(self.LOG_DIR):

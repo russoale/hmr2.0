@@ -1,8 +1,8 @@
 from glob import glob
+from os.path import join
 from time import time
 
 import tensorflow as tf
-from os.path import join
 
 from main.config import Config
 
@@ -15,70 +15,16 @@ class Dataset(object):
         self.flip_ids_kp3d = self.flip_ids_kp2d[:self.config.NUM_KP3D]
 
     ############################################################
-    #  Test Dataset Loader
-    ############################################################
-
-    def get_test(self):
-        start = time()
-        print('initialize test dataset...')
-        tf_record_dirs = [join(self.config.DATA_DIR, dataset, '*_test.tfrecord') for dataset in self.config.DATASETS]
-        tf_records = [tf_record for tf_records in sorted([glob(f) for f in tf_record_dirs]) for tf_record in tf_records]
-
-        test_dataset = tf.data.TFRecordDataset(tf_records, num_parallel_reads=self.config.NUM_PARALLEL) \
-            .map(self._parse_test, num_parallel_calls=self.config.NUM_PARALLEL) \
-            .map(self._convert_and_scale_test, num_parallel_calls=self.config.NUM_PARALLEL) \
-            .batch(self.config.BATCH_SIZE, drop_remainder=True) \
-            .prefetch(self.config.BATCH_SIZE * 2)
-
-        print('Done (t={})\n'.format(time() - start))
-        return test_dataset
-
-    def _parse_test(self, example_proto):
-        feature_map = {
-            'image_raw': tf.io.FixedLenFeature([], dtype=tf.string, default_value=''),
-            'keypoints_3d': tf.io.VarLenFeature(dtype=tf.float32),
-            'sequence': tf.io.FixedLenFeature([], dtype=tf.string)
-        }
-        features = tf.io.parse_single_example(example_proto, feature_map)
-        image_data = features['image_raw']
-        kp3d = tf.reshape(tf.sparse.to_dense(features['keypoints_3d']), (self.config.NUM_KP3D, 3))
-        sequence = features['sequence']
-
-        return image_data, kp3d, sequence
-
-    def _convert_and_scale_test(self, image_data, kp3d, sequence):
-        image = tf.image.decode_jpeg(image_data, channels=3)
-        # helpers.show_image(image.numpy(), kp2d.numpy()[:, :2], vis.numpy())
-
-        # convert to [0, 1].
-        image = tf.image.convert_image_dtype(image, dtype=tf.float32)
-
-        encoder_img_size = self.config.ENCODER_INPUT_SHAPE[:2]
-        image_resize = tf.image.resize(image, encoder_img_size, method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
-
-        # Normalize image to [-1, 1]
-        image_final = tf.subtract(image_resize, 0.5)
-        image_final = tf.multiply(image_final, 2.0)
-
-        return image_final, kp3d, sequence
-
-    ############################################################
     #  Train/Val Dataset Loader
     ############################################################
 
     def get_train(self):
         start = time()
         print('initialize train dataset...')
-        tf_record_dirs = [join(self.config.DATA_DIR, dataset, '*_train.tfrecord') for dataset in self.config.DATASETS]
-        tf_records = [tf_record for tf_records in sorted([glob(f) for f in tf_record_dirs]) for tf_record in tf_records]
-
-        dataset = tf.data.TFRecordDataset(tf_records, num_parallel_reads=self.config.NUM_PARALLEL) \
-            .shuffle(len(tf_records), seed=self.config.SEED) \
-            .map(self._parse, num_parallel_calls=self.config.NUM_PARALLEL) \
-            .map(self._random_jitter, num_parallel_calls=self.config.NUM_PARALLEL) \
-            .shuffle(self.config.NUM_PARALLEL * self.config.BATCH_SIZE, seed=self.config.SEED) \
-            .batch(self.config.BATCH_SIZE) \
-            .prefetch(self.config.BATCH_SIZE * 2)
+        dataset = self.create_dataset('train', self._parse, self._random_jitter)
+        dataset = dataset.shuffle(10000, seed=self.config.SEED, reshuffle_each_iteration=True)
+        dataset = dataset.batch(self.config.BATCH_SIZE, drop_remainder=True)
+        dataset = dataset.prefetch(tf.data.experimental.AUTOTUNE)
 
         print('Done (t={})\n'.format(time() - start))
         return dataset
@@ -86,15 +32,9 @@ class Dataset(object):
     def get_val(self):
         start = time()
         print('initialize val dataset...')
-        tf_record_dirs = [join(self.config.DATA_DIR, dataset, '*_val.tfrecord') for dataset in self.config.DATASETS]
-        tf_records = [tf_record for tf_records in sorted([glob(f) for f in tf_record_dirs]) for tf_record in tf_records]
-
-        val_dataset = tf.data.TFRecordDataset(tf_records, num_parallel_reads=self.config.NUM_PARALLEL) \
-            .shuffle(len(tf_records), seed=self.config.SEED) \
-            .map(self._parse, num_parallel_calls=self.config.NUM_PARALLEL) \
-            .map(self._convert_and_scale, num_parallel_calls=self.config.NUM_PARALLEL) \
-            .batch(self.config.BATCH_SIZE) \
-            .prefetch(self.config.BATCH_SIZE * 2)
+        val_dataset = self.create_dataset('val', self._parse, self._convert_and_scale)
+        val_dataset = val_dataset.batch(self.config.BATCH_SIZE)
+        val_dataset = val_dataset.prefetch(tf.data.experimental.AUTOTUNE)
 
         print('Done (t={})\n'.format(time() - start))
         return val_dataset
@@ -301,17 +241,14 @@ class Dataset(object):
     def get_smpl(self):
         start = time()
         print('initialize smpl dataset...')
-        smpl_record_dirs = [join(self.config.SMPL_DATA_DIR, dataset, '*_train.tfrecord') for dataset in
-                            self.config.SMPL_DATASETS]
-        smpl_tf_records = [record for records in sorted([glob(f) for f in smpl_record_dirs]) for record in records]
-
-        smpl_dataset = tf.data.TFRecordDataset(smpl_tf_records, num_parallel_reads=self.config.NUM_PARALLEL) \
-            .shuffle(len(smpl_tf_records), seed=self.config.SEED) \
-            .map(self._parse_smpl, num_parallel_calls=self.config.NUM_PARALLEL) \
-            .shuffle(self.config.NUM_PARALLEL * self.config.BATCH_SIZE, seed=self.config.SEED) \
-            .batch(self.config.BATCH_SIZE) \
-            .prefetch(self.config.BATCH_SIZE * 2) \
-            .repeat()
+        smpl_dataset = self.create_dataset('train', self._parse_smpl,
+                                           data_dir=self.config.SMPL_DATA_DIR,
+                                           datasets=self.config.SMPL_DATASETS)
+        smpl_dataset = smpl_dataset.shuffle(10000, seed=self.config.SEED, reshuffle_each_iteration=True)
+        # keep batch size * iterations as discriminator runs over all predictions from IF loop
+        smpl_dataset = smpl_dataset.batch(self.config.BATCH_SIZE * self.config.ITERATIONS, drop_remainder=True)
+        smpl_dataset = smpl_dataset.prefetch(tf.data.experimental.AUTOTUNE)
+        smpl_dataset = smpl_dataset.repeat()
 
         print('Done (t={})\n'.format(time() - start))
         return smpl_dataset
@@ -325,7 +262,55 @@ class Dataset(object):
         pose = tf.reshape(tf.sparse.to_dense(features['pose']), (self.config.NUM_POSE_PARAMS,))
         shape = tf.reshape(tf.sparse.to_dense(features['shape']), (self.config.NUM_SHAPE_PARAMS,))
 
-        return tf.concat([tf.zeros(3), pose, shape], axis=-1)  # fake cam, pose and shape
+        return tf.concat([pose, shape], axis=-1)
+
+    ############################################################
+    #  Test Dataset Loader
+    ############################################################
+
+    def get_test(self):
+        start = time()
+        print('initialize test dataset...')
+        tf_record_dirs = [join(self.config.DATA_DIR, dataset, '*_test.tfrecord') for dataset in self.config.DATASETS]
+        tf_records = [tf_record for tf_records in sorted([glob(f) for f in tf_record_dirs]) for tf_record in tf_records]
+
+        test_dataset = tf.data.TFRecordDataset(tf_records, num_parallel_reads=self.config.NUM_PARALLEL * 2) \
+            .map(self._parse_test, num_parallel_calls=self.config.NUM_PARALLEL * 2) \
+            .map(self._convert_and_scale_test, num_parallel_calls=self.config.NUM_PARALLEL * 2) \
+            .batch(self.config.BATCH_SIZE) \
+            .prefetch(self.config.NUM_PARALLEL * 2)
+
+        print('Done (t={})\n'.format(time() - start))
+        return test_dataset
+
+    def _parse_test(self, example_proto):
+        feature_map = {
+            'image_raw': tf.io.FixedLenFeature([], dtype=tf.string, default_value=''),
+            'keypoints_3d': tf.io.VarLenFeature(dtype=tf.float32),
+            'sequence': tf.io.FixedLenFeature([], dtype=tf.string)
+        }
+        features = tf.io.parse_single_example(example_proto, feature_map)
+        image_data = features['image_raw']
+        kp3d = tf.reshape(tf.sparse.to_dense(features['keypoints_3d']), (self.config.NUM_KP3D, 3))
+        sequence = features['sequence']
+
+        return image_data, kp3d, sequence
+
+    def _convert_and_scale_test(self, image_data, kp3d, sequence):
+        image = tf.image.decode_jpeg(image_data, channels=3)
+        # helpers.show_image(image.numpy(), kp2d.numpy()[:, :2], vis.numpy())
+
+        # convert to [0, 1].
+        image = tf.image.convert_image_dtype(image, dtype=tf.float32)
+
+        encoder_img_size = self.config.ENCODER_INPUT_SHAPE[:2]
+        image_resize = tf.image.resize(image, encoder_img_size, method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
+
+        # Normalize image to [-1, 1]
+        image_final = tf.subtract(image_resize, 0.5)
+        image_final = tf.multiply(image_final, 2.0)
+
+        return image_final, kp3d, sequence
 
     ############################################################
     #  Inference Dataset Loader
@@ -343,7 +328,7 @@ class Dataset(object):
             'keypoints_2d': tf.io.VarLenFeature(dtype=tf.float32),
             'keypoints_3d': tf.io.VarLenFeature(dtype=tf.float32),
             'has_3d': tf.io.FixedLenFeature([], dtype=tf.int64),
-            'sequence': tf.io.FixedLenFeature([], dtype=tf.string)
+            'sequence': tf.io.FixedLenFeature([], dtype=tf.string, default_value='train')
         }
         features = tf.io.parse_single_example(example_proto, feature_map)
 
@@ -358,3 +343,29 @@ class Dataset(object):
     def _convert_and_scale_all(self, image_data, kp2d, kp3d, has_3d, sequence):
         image_final, kp2d_final, kp3d, has_3d = self._convert_and_scale(image_data, kp2d, kp3d, has_3d)
         return image_final, kp2d_final, kp3d, has_3d, sequence
+
+    ############################################################
+    #  Helper
+    ############################################################
+
+    def create_dataset(self, ds_type, parse_func, map_func=None, data_dir=None, datasets=None):
+        if data_dir is None:
+            data_dir = self.config.DATA_DIR
+        if datasets is None:
+            datasets = self.config.DATASETS
+
+        tf_record_dirs = [join(data_dir, dataset, '*_{}.tfrecord'.format(ds_type)) for dataset in datasets]
+        tf_records = [tf_record for tf_records in sorted([glob(f) for f in tf_record_dirs]) for tf_record in tf_records]
+
+        dataset = tf.data.Dataset.from_tensor_slices(tf_records)
+        dataset = dataset.shuffle(len(tf_records))
+        dataset = dataset.interleave(map_func=lambda record: tf.data.TFRecordDataset(record),
+                                     cycle_length=self.config.BATCH_SIZE * self.config.NUM_PARALLEL,
+                                     block_length=self.config.BATCH_SIZE,
+                                     num_parallel_calls=tf.data.experimental.AUTOTUNE
+                                     )
+        dataset = dataset.map(parse_func, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+        if map_func is not None:
+            dataset = dataset.map(map_func, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+
+        return dataset

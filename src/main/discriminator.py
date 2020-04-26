@@ -22,7 +22,7 @@ class CommonPoseDiscriminator(tf.keras.Model):
     def call(self, inputs, **kwargs):
         batch_size = inputs.shape[0] or self.config.BATCH_SIZE
         shape = (batch_size, self.config.NUM_JOINTS, 9)
-        assert inputs.shape == shape, "input dimension must be of shape {} but got {}".format(shape, inputs.shape)
+        assert inputs.shape[1:] == shape[1:], 'shape mismatch: should be {} but is {}'.format(shape, inputs.shape)
 
         x = tf.expand_dims(inputs, 2)  # to batch x K x 1 x 9 ('channels_last' default)
         x = self.conv_2d_one(x, **kwargs)
@@ -50,7 +50,7 @@ class SingleJointDiscriminator(tf.keras.Model):
     def call(self, inputs, **kwargs):
         batch_size = inputs.shape[0] or self.config.BATCH_SIZE
         shape = (batch_size, self.config.NUM_JOINTS, 1, 32)
-        assert inputs.shape == shape, "input dimension must be of shape {} but got {}".format(shape, inputs.shape)
+        assert inputs.shape[1:] == shape[1:], 'shape mismatch: should be {} but is {}'.format(shape, inputs.shape)
 
         single_joint_outputs = []
         for i in range(self.config.NUM_JOINTS):
@@ -78,9 +78,8 @@ class FullPoseDiscriminator(tf.keras.Model):
     def call(self, inputs, **kwargs):
         batch_size = inputs.shape[0] or self.config.BATCH_SIZE
         shape = (batch_size, self.config.NUM_JOINTS, 1, 32)
-        assert inputs.shape == shape, "input dimension must be of shape {} but got {}".format(shape, inputs.shape)
+        assert inputs.shape[1:] == shape[1:], 'shape mismatch: should be {} but is {}'.format(shape, inputs.shape)
 
-        batch_size = inputs.shape[0] or self.config.BATCH_SIZE
         x = tf.reshape(inputs, [batch_size, -1])
         x = self.fc_one(x, **kwargs)
         x = self.fc_two(x, **kwargs)
@@ -103,7 +102,7 @@ class ShapeDiscriminator(tf.keras.Model):
     def call(self, inputs, **kwargs):
         batch_size = inputs.shape[0] or self.config.BATCH_SIZE
         shape = (batch_size, self.config.NUM_SHAPE_PARAMS)
-        assert inputs.shape == shape, "input dimension must be of shape {} but got {}".format(shape, inputs.shape)
+        assert inputs.shape[1:] == shape[1:], 'shape mismatch: should be {} but is {}'.format(shape, inputs.shape)
 
         x = self.fc_one(inputs, **kwargs)
         x = self.fc_two(x, **kwargs)
@@ -117,6 +116,7 @@ class Discriminator(tf.keras.Model):
 
     def __init__(self):
         super(Discriminator, self).__init__(name='discriminator')
+        self.config = Config()
 
         self.common_pose_discriminator = CommonPoseDiscriminator()
         self.single_joint_discriminator = SingleJointDiscriminator()
@@ -124,21 +124,17 @@ class Discriminator(tf.keras.Model):
         self.shape_discriminator = ShapeDiscriminator()
 
     def call(self, inputs, **kwargs):
-        config = Config()
         batch_size = inputs.shape[0] or self.config.BATCH_SIZE
-        shape = (batch_size, config.NUM_SMPL_PARAMS)
-        assert inputs.shape == shape, "input dimension must be of shape {} but got {}".format(shape, inputs.shape)
+        shape = (batch_size, self.config.NUM_JOINTS * 9 + self.config.NUM_SHAPE_PARAMS)
+        assert inputs.shape[1:] == shape[1:], 'shape mismatch: should be {} but is {}'.format(shape, inputs.shape)
 
-        # inputs batch x thetas (cams: 3, pose: 72, shape: 10)
-        _ = inputs[:, :config.NUM_CAMERA_PARAMS]  # camera is never used
-        poses = inputs[:, config.NUM_CAMERA_PARAMS:(config.NUM_CAMERA_PARAMS + config.NUM_POSE_PARAMS)]
-        shapes = inputs[:, -config.NUM_SHAPE_PARAMS:]
+        # inputs batch x (pose: 207, shape: 10)
+        poses = inputs[:, :self.config.NUM_JOINTS * 9]
+        shapes = inputs[:, -self.config.NUM_SHAPE_PARAMS:]
 
-        # compute rotations matrices for [batch x K x 9] - ignore global rotation
-        batch_poses_rot_mat = batch_rodrigues(poses)[:, 1:, :]
-
+        poses = tf.reshape(poses, [batch_size, self.config.NUM_JOINTS, 9])
         # compute common embedding features [batch x K x 1 x 32]
-        common_pose_features = self.common_pose_discriminator(batch_poses_rot_mat, **kwargs)
+        common_pose_features = self.common_pose_discriminator(poses, **kwargs)
 
         # compute joint specific discriminators [batch x K]
         single_joint_outputs = self.single_joint_discriminator(common_pose_features, **kwargs)

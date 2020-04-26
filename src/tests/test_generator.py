@@ -12,31 +12,31 @@ import numpy as np
 import tensorflow as tf
 
 from main.generator import Generator, Regressor, Config
-from tests._config import TestConfig
+from main.local import LocalConfig
 
 
 class TestGenerator(tf.test.TestCase):
 
     def setUp(self):
         super(TestGenerator, self).setUp()
-        self.batch_size = TestConfig().BATCH_SIZE
+        self.batch_size = LocalConfig().BATCH_SIZE
 
     def test_resnet(self):
         inputs = tf.ones((self.batch_size, 224, 224, 3))
         generator = Generator()
         outputs = generator.resnet50V2(inputs, training=True)
         mean = tf.reduce_mean(outputs)
-        expected = np.array(0.1586007, dtype=np.float32)
+        expected = np.array(0.1585712, dtype=np.float32)
 
         self.assertAllCloseAccordingToType(expected, mean)
         self.assertEqual(outputs.shape, (self.batch_size, 2048))
 
     def test_regressor(self):
-        inputs = tf.ones((self.batch_size, 2024))
+        inputs = tf.ones((self.batch_size, 2048))
         regressor = Regressor()
         outputs = regressor(inputs, training=True)
         mean = tf.reduce_mean(outputs)
-        expected = np.array(0.0862213, dtype=np.float32)
+        expected = np.array(0.0841677, dtype=np.float32)
 
         self.assertAllCloseAccordingToType(expected, mean)
         self.assertEqual(outputs.shape, (3, self.batch_size, 85))
@@ -47,11 +47,12 @@ class TestGenerator(tf.test.TestCase):
         outputs = generator(inputs)
 
         self.assertEqual(len(outputs), 3)
-        self.assertEqual(outputs[0][0].shape, (self.batch_size, 85))
-        self.assertEqual(outputs[0][1].shape, (self.batch_size, 6890, 3))
-        self.assertEqual(outputs[0][2].shape, (self.batch_size, 19, 2))
-        self.assertEqual(outputs[0][3].shape, (self.batch_size, 19, 3))
-        self.assertEqual(outputs[0][4].shape, (self.batch_size, 24, 3, 3))
+        self.assertEqual(outputs[0][0].shape, (self.batch_size, 6890, 3))
+        self.assertEqual(outputs[0][1].shape, (self.batch_size, 19, 2))
+        self.assertEqual(outputs[0][2].shape, (self.batch_size, 19, 3))
+        self.assertEqual(outputs[0][3].shape, (self.batch_size, 24, 3, 3))
+        self.assertEqual(outputs[0][4].shape, (self.batch_size, 10))
+        self.assertEqual(outputs[0][5].shape, (self.batch_size, 3))
 
 
 def create_info():

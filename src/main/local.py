@@ -17,7 +17,14 @@ class LocalConfig(Config):
     DATASETS = ['dataset']
     SMPL_DATASETS = ['smpl']
     BATCH_SIZE = 2
-    SEED = 1
+
+    def __init__(self):
+        super(LocalConfig, self).__init__()
+        self.SEED = 1
+        self.NUM_TRAINING_SAMPLES = 1
+        self.NUM_TRAIN_SMPL_SAMPLES = 4
+        self.NUM_VALIDATION_SAMPLES = 1
+        self.NUM_TEST_SAMPLES = 1
 
 
 if __name__ == '__main__':
