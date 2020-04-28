@@ -2,7 +2,7 @@ import tensorflow as tf
 from tensorflow.keras import layers
 from tensorflow.keras.applications.resnet_v2 import ResNet50V2
 
-from main import util
+from main import model_util
 from main.config import Config
 from main.smpl import Smpl
 
@@ -13,7 +13,7 @@ class Regressor(tf.keras.Model):
         super(Regressor, self).__init__(name='regressor')
         self.config = Config()
 
-        self.mean_theta = tf.Variable(util.load_mean_theta(), name='mean_theta', trainable=True)
+        self.mean_theta = tf.Variable(model_util.load_mean_theta(), name='mean_theta', trainable=True)
 
         self.fc_one = layers.Dense(1024, activation='relu', name='fc_0')
         self.dropout_one = layers.Dropout(0.5)
@@ -75,7 +75,7 @@ class Generator(tf.keras.Model):
         cams = theta[:, :self.config.NUM_CAMERA_PARAMS]
         pose_and_shape = theta[:, self.config.NUM_CAMERA_PARAMS:]
         vertices, joints_3d, rotations = self.smpl(pose_and_shape, **kwargs)
-        joints_2d = util.batch_orthographic_projection(joints_3d, cams)
+        joints_2d = model_util.batch_orthographic_projection(joints_3d, cams)
         shapes = theta[:, -self.config.NUM_SHAPE_PARAMS:]
 
         return tf.tuple([vertices, joints_2d, joints_3d, rotations, shapes, cams])

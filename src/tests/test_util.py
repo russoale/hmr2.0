@@ -11,7 +11,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 import tensorflow as tf
 
-from main.util import batch_orthographic_projection, batch_skew_symmetric, batch_rodrigues, \
+from main.model_util import batch_orthographic_projection, batch_skew_symmetric, batch_rodrigues, \
     batch_global_rigid_transformation, batch_align_by_pelvis, batch_compute_similarity_transform
 from main.local import LocalConfig
 from tests._helper import get_kp3d

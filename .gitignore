@@ -1,6 +1,6 @@
 /.idea/
 /logs/
-/datasets_preprocessing/converter/__pycache__/
-/notebooks/__pycache__/
+/src/datasets_preprocessing/converter/__pycache__/
+/src/notebooks/__pycache__/
 /src/main/__pycache__/
 /src/tests/__pycache__/

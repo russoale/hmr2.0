@@ -2,7 +2,6 @@ import tensorflow as tf
 from tensorflow.keras import layers
 
 from main.config import Config
-from main.util import batch_rodrigues
 
 
 class CommonPoseDiscriminator(tf.keras.Model):

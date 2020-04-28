@@ -23,7 +23,7 @@ class Config(object):
     ROOT_DATA_DIR = os.path.join('/', 'data', 'ssd1', 'russales')
 
     # path to save training models to
-    LOG_DIR = os.path.join(ROOT_DATA_DIR, 'logs', datetime.now().strftime("%d%m%Y-%H%M%S"))
+    LOG_DIR = os.path.join(ROOT_DATA_DIR, 'logs_test', datetime.now().strftime("%d%m%Y-%H%M%S"))
 
     # path to specific checkpoint to be restored
     # if LOG_DIR is set to specific training and RESTORE_PATH is None

@@ -5,7 +5,7 @@ import tensorflow as tf
 from tensorflow.keras import layers
 
 from main.config import Config
-from main.util import batch_rodrigues, batch_global_rigid_transformation
+from main.model_util import batch_rodrigues, batch_global_rigid_transformation
 
 
 class Smpl(layers.Layer):
