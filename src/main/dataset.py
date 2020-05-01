@@ -274,10 +274,14 @@ class Dataset(object):
         tf_record_dirs = [join(self.config.DATA_DIR, dataset, '*_test.tfrecord') for dataset in self.config.DATASETS]
         tf_records = [tf_record for tf_records in sorted([glob(f) for f in tf_record_dirs]) for tf_record in tf_records]
 
+        drop_remainder = False
+        if self.config.NUM_TEST_SAMPLES % self.config.BATCH_SIZE > 0:
+            drop_remainder = True
+
         test_dataset = tf.data.TFRecordDataset(tf_records, num_parallel_reads=self.config.NUM_PARALLEL * 2) \
             .map(self._parse_test, num_parallel_calls=self.config.NUM_PARALLEL * 2) \
             .map(self._convert_and_scale_test, num_parallel_calls=self.config.NUM_PARALLEL * 2) \
-            .batch(self.config.BATCH_SIZE) \
+            .batch(self.config.BATCH_SIZE, drop_remainder=drop_remainder) \
             .prefetch(self.config.NUM_PARALLEL * 2)
 
         print('Done (t={})\n'.format(time() - start))

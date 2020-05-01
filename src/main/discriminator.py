@@ -14,8 +14,16 @@ class CommonPoseDiscriminator(tf.keras.Model):
         super(CommonPoseDiscriminator, self).__init__(name='common_pose_discriminator')
         self.config = Config()
 
-        self.conv_2d_one = layers.Conv2D(32, [1, 1], name='conv_2d_one')
-        self.conv_2d_two = layers.Conv2D(32, [1, 1], name='conv_2d_two')
+        l2_regularizer = tf.keras.regularizers.l2(self.config.DISCRIMINATOR_WEIGHT_DECAY)
+        conv_2d_params = {
+            'filters': 32,
+            'kernel_size': [1, 1],
+            'padding': 'same',
+            'data_format': 'channels_last',
+            'kernel_regularizer': l2_regularizer
+        }
+        self.conv_2d_one = layers.Conv2D(**conv_2d_params, name='conv_2d_one')
+        self.conv_2d_two = layers.Conv2D(**conv_2d_params, name='conv_2d_two')
 
     # [batch x K x 9]
     def call(self, inputs, **kwargs):
@@ -25,7 +33,9 @@ class CommonPoseDiscriminator(tf.keras.Model):
 
         x = tf.expand_dims(inputs, 2)  # to batch x K x 1 x 9 ('channels_last' default)
         x = self.conv_2d_one(x, **kwargs)
+        x = tf.nn.relu(x)
         x = self.conv_2d_two(x, **kwargs)
+        x = tf.nn.relu(x)
         return x  # to [batch x K x 1 x 32]
 
     def compute_output_shape(self, input_shape):
@@ -41,9 +51,10 @@ class SingleJointDiscriminator(tf.keras.Model):
         super(SingleJointDiscriminator, self).__init__(name='single_joint_discriminator')
         self.config = Config()
 
+        l2_regularizer = tf.keras.regularizers.l2(self.config.DISCRIMINATOR_WEIGHT_DECAY)
         self.joint_discriminators = []
         for i in range(self.config.NUM_JOINTS):
-            self.joint_discriminators.append(layers.Dense(1, name="disc_j{}".format(i)))
+            self.joint_discriminators.append(layers.Dense(1, kernel_regularizer=l2_regularizer, name="fc_{}".format(i)))
 
     # [batch x K x 1 x 32]
     def call(self, inputs, **kwargs):
@@ -68,10 +79,11 @@ class FullPoseDiscriminator(tf.keras.Model):
         super(FullPoseDiscriminator, self).__init__(name='full_pose_discriminator')
         self.config = Config()
 
-        input_dim = self.config.NUM_JOINTS * 32
-        self.fc_one = layers.Dense(1024, activation='relu', name="full_pose_fc_0", input_dim=input_dim)
-        self.fc_two = layers.Dense(1024, activation='relu', name="full_pose_fc_1")
-        self.fc_out = layers.Dense(1, activation=None, name="full_pose_fc_out")
+        l2_regularizer = tf.keras.regularizers.l2(self.config.DISCRIMINATOR_WEIGHT_DECAY)
+        self.flatten = layers.Flatten()
+        self.fc_one = layers.Dense(1024, kernel_regularizer=l2_regularizer, name="fc_0")
+        self.fc_two = layers.Dense(1024, kernel_regularizer=l2_regularizer, name="fc_1")
+        self.fc_out = layers.Dense(1, kernel_regularizer=l2_regularizer, name="fc_out")
 
     # [batch x K x 1 x 32]
     def call(self, inputs, **kwargs):
@@ -79,9 +91,11 @@ class FullPoseDiscriminator(tf.keras.Model):
         shape = (batch_size, self.config.NUM_JOINTS, 1, 32)
         assert inputs.shape[1:] == shape[1:], 'shape mismatch: should be {} but is {}'.format(shape, inputs.shape)
 
-        x = tf.reshape(inputs, [batch_size, -1])
+        x = self.flatten(inputs)
         x = self.fc_one(x, **kwargs)
+        x = tf.nn.relu(x)
         x = self.fc_two(x, **kwargs)
+        x = tf.nn.relu(x)
         x = self.fc_out(x, **kwargs)
         return x  # [batch x 1]
 
@@ -94,8 +108,10 @@ class ShapeDiscriminator(tf.keras.Model):
         super(ShapeDiscriminator, self).__init__(name='shape_discriminator')
         self.config = Config()
 
-        self.fc_one = layers.Dense(5, activation='relu', name="shape_fc_0", input_dim=self.config.NUM_SHAPE_PARAMS)
-        self.fc_two = layers.Dense(1, activation=None, name="shape_fc_1")
+        l2_regularizer = tf.keras.regularizers.l2(self.config.DISCRIMINATOR_WEIGHT_DECAY)
+        self.fc_one = layers.Dense(10, kernel_regularizer=l2_regularizer, name="fc_0")
+        self.fc_two = layers.Dense(5, kernel_regularizer=l2_regularizer, name="fc_1")
+        self.fc_out = layers.Dense(1, kernel_regularizer=l2_regularizer, name="fc_out")
 
     # [batch x beta]
     def call(self, inputs, **kwargs):
@@ -104,7 +120,10 @@ class ShapeDiscriminator(tf.keras.Model):
         assert inputs.shape[1:] == shape[1:], 'shape mismatch: should be {} but is {}'.format(shape, inputs.shape)
 
         x = self.fc_one(inputs, **kwargs)
+        x = tf.nn.relu(x)
         x = self.fc_two(x, **kwargs)
+        x = tf.nn.relu(x)
+        x = self.fc_out(x, **kwargs)
         return x  # [batch x 1]
 
     def compute_output_shape(self, input_shape):

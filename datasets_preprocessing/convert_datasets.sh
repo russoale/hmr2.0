@@ -5,7 +5,7 @@
 DATA_DIR=/data/ssd1/russales/datasets
 
 # path where to store tf records
-OUT_DIR=/data/ssd1/russales/new_records
+OUT_DIR=/data/ssd1/russales/tfrecords
 
 export TF_CPP_MIN_LOG_LEVEL=2
 export CUDA_VISIBLE_DEVICES=-1

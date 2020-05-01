@@ -15,12 +15,12 @@ class Regressor(tf.keras.Model):
 
         self.mean_theta = tf.Variable(model_util.load_mean_theta(), name='mean_theta', trainable=True)
 
-        self.fc_one = layers.Dense(1024, activation='relu', name='fc_0')
+        self.fc_one = layers.Dense(1024, name='fc_0')
         self.dropout_one = layers.Dropout(0.5)
-        self.fc_two = layers.Dense(1024, activation='relu', name='fc_1')
+        self.fc_two = layers.Dense(1024, name='fc_1')
         self.dropout_two = layers.Dropout(0.5)
         variance_scaling = tf.initializers.VarianceScaling(.01, mode='fan_avg', distribution='uniform')
-        self.fc_three = layers.Dense(85, activation=None, kernel_initializer=variance_scaling, name='fc_2')
+        self.fc_out = layers.Dense(85, kernel_initializer=variance_scaling, name='fc_out')
 
     def call(self, inputs, **kwargs):
         batch_size = inputs.shape[0] or self.config.BATCH_SIZE
@@ -39,10 +39,12 @@ class Regressor(tf.keras.Model):
 
     def _fc_blocks(self, inputs, **kwargs):
         x = self.fc_one(inputs, **kwargs)
+        x = tf.nn.relu(x)
         x = self.dropout_one(x, **kwargs)
         x = self.fc_two(x, **kwargs)
+        x = tf.nn.relu(x)
         x = self.dropout_two(x, **kwargs)
-        x = self.fc_three(x, **kwargs)
+        x = self.fc_out(x, **kwargs)
         return x
 
 
@@ -54,8 +56,33 @@ class Generator(tf.keras.Model):
 
         self.enc_shape = self.config.ENCODER_INPUT_SHAPE
         self.resnet50V2 = ResNet50V2(include_top=False, weights='imagenet', input_shape=self.enc_shape, pooling='avg')
+        self._set_resnet_arg_scope()
+
         self.regressor = Regressor()
         self.smpl = Smpl()
+
+    def _set_resnet_arg_scope(self):
+        """This method acts similar to TF 1.x contrib's slim `resnet_arg_scope()`.
+            It overrides
+        """
+        vs_initializer = tf.keras.initializers.VarianceScaling(2.0)
+        l2_regularizer = tf.keras.regularizers.l2(self.config.GENERATOR_WEIGHT_DECAY)
+        for layer in self.resnet50V2.layers:
+            if isinstance(layer, layers.Conv2D):
+                # original implementations slim `resnet_arg_scope` additionally sets
+                # `normalizer_fn` and `normalizer_params` which in TF 2.0 need to be implemented
+                # as own layers. This is not possible using keras ResNet50V2 application.
+                # Nevertheless this is not needed as training seems to be likely stable.
+                # See https://www.tensorflow.org/guide/migrate#a_note_on_slim_contriblayers for more
+                # migration insights
+                setattr(layer, 'padding', 'same')
+                setattr(layer, 'kernel_initializer', vs_initializer)
+                setattr(layer, 'kernel_regularizer', l2_regularizer)
+            if isinstance(layer, layers.BatchNormalization):
+                setattr(layer, 'momentum', 0.997)
+                setattr(layer, 'epsilon', 1e-5)
+            if isinstance(layer, layers.MaxPooling2D):
+                setattr(layer, 'padding', 'same')
 
     def call(self, inputs, **kwargs):
         check = inputs.shape[1:] == self.enc_shape

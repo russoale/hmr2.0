@@ -1,10 +1,10 @@
-import argparse
-
 import abc
+import argparse
+from os import path, makedirs, listdir, environ
+
 import cv2
 import numpy as np
 import tensorflow as tf
-from os import path, makedirs, listdir, environ
 from tqdm import tqdm
 
 # tf INFO and WARNING messages are not printed
@@ -14,11 +14,12 @@ from converter.helpers import check_np_array, check_type, int64_feature, float_f
 
 
 class TFRecordConverterConfig:
-    def __init__(self, num_kp2d=19, num_kp3d=14, margin=150, min_vis=5, min_3d_mov=.2, max_scale=150.):
+    def __init__(self, num_kp2d=19, num_kp3d=14, margin=150, min_vis=6, min_height=60, min_3d_mov=.2, max_scale=150.):
         self.num_kp2d = num_kp2d
         self.num_kp3d = num_kp3d
         self.margin = margin
         self.min_vis = min_vis
+        self.min_height = min_height
         self.min_3d_mov = min_3d_mov
         self.max_scale = max_scale
 
@@ -100,6 +101,13 @@ class TFRecordConverter(abc.ABC):
                 d.kps_2d = np.pad(d.kps_2d, [[0, 0], [0, p], [0, 0]], mode='constant', constant_values=0.0)
                 d.vis = np.pad(d.vis, [[0, 0], [0, p]], mode='constant', constant_values=0.0)
 
+            if d.kps_2d.min() < 0:
+                # some 3D datasets contain negative 2D coordinates
+                # due to 3D re-projection the keypoints appear outside the camera view
+                frame_ids, kp_ids = np.where(np.any(d.kps_2d < 0, axis=2))
+                d.kps_2d[frame_ids, kp_ids, :] = np.float32(0.)
+                d.vis[frame_ids, kp_ids] = np.int64(0)
+
             if d.seqs is None:
                 d.seqs = np.zeros(d.image_paths.shape[0])
 
@@ -138,6 +146,13 @@ class TFRecordConverter(abc.ABC):
                     continue
 
                 if sum(vis) <= self.config.min_vis:
+                    continue
+
+                vis_kps = kp2d[vis.astype(bool)]
+                min_pt = np.min(vis_kps, axis=0)
+                max_pt = np.max(vis_kps, axis=0)
+                kp_bbox = [max_pt[0] - min_pt[0], max_pt[1] - min_pt[1]]
+                if max(kp_bbox) < self.config.min_height:
                     continue
 
                 use_these[idx] = True
@@ -211,17 +226,21 @@ class TFRecordConverter(abc.ABC):
         kp2d[:, 0] -= top_left[0]
         kp2d[:, 1] -= top_left[1]
 
-        if not self._check_min_vis(image, kp2d):
+        if not self._check_min_vis(image, kp2d, vis):
             return
 
         return image, kp2d, vis, kps_3d
 
-    def _check_min_vis(self, img, kp2d):
+    def _check_min_vis(self, img, kp2d, vis):
         height, width = img.shape[:2]
 
         x_in = np.logical_and(kp2d[:, 0] < width, kp2d[:, 0] >= 0)
         y_in = np.logical_and(kp2d[:, 1] < height, kp2d[:, 1] >= 0)
         kps_in = np.logical_and(x_in, y_in)
+
+        kps_out = np.logical_not(kps_in)
+        kp2d[kps_out, :] = np.float32(0.)
+        vis[kps_out] = np.int64(0)
 
         return np.sum(kps_in) >= self.config.min_vis
 

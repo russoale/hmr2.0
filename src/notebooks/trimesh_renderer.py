@@ -42,7 +42,18 @@ class TrimeshRenderer(object):
 
         if img is not None:
             img = cv2.cvtColor(img, cv2.COLOR_RGB2RGBA)
-            image = cv2.addWeighted(img, 1., image, 0.7, 0)
+            x_offset = y_offset = 0
+            y1, y2 = y_offset, y_offset + image.shape[0]
+            x1, x2 = x_offset, x_offset + image.shape[1]
+
+            alpha_mesh = image[:, :, 3] / 255.0
+            alpha_image = 1.0 - alpha_mesh
+
+            for c in range(0, 3):
+                img[y1:y2, x1:x2, c] = (alpha_mesh * image[:, :, c] + alpha_image * img[y1:y2, x1:x2, c])
+
+            # image = cv2.addWeighted(img, 0., image, 1., 0)
+            image = img
 
         return image
 

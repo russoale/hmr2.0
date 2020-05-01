@@ -23,7 +23,7 @@ class Config(object):
     ROOT_DATA_DIR = os.path.join('/', 'data', 'ssd1', 'russales')
 
     # path to save training models to
-    LOG_DIR = os.path.join(ROOT_DATA_DIR, 'logs_test', datetime.now().strftime("%d%m%Y-%H%M%S"))
+    LOG_DIR = os.path.join(ROOT_DATA_DIR, 'logs', datetime.now().strftime("%d%m%Y-%H%M%S"))
 
     # path to specific checkpoint to be restored
     # if LOG_DIR is set to specific training and RESTORE_PATH is None
@@ -34,7 +34,7 @@ class Config(object):
     # path to saved dataset in tf record format
     # folder names should be same as defined in DATASET config (see below):
     # e.g. DATASETS = ['coco', 'mpii_3d', 'h36m']
-    DATA_DIR = os.path.join(ROOT_DATA_DIR, 'new_records')
+    DATA_DIR = os.path.join(ROOT_DATA_DIR, 'tfrecords')
 
     # path to saved smpl data in tf record format
     # folder names should be same as defined in SMPL_DATASETS config (see below):
@@ -172,10 +172,10 @@ class Config(object):
         """
         train_samples_per_dataset = {
             'lsp': 999,
-            'lsp_ext': 9984,
-            'mpii': 17537,
-            'coco': 116601,
-            'mpii_3d': 166982,
+            'lsp_ext': 9896,
+            'mpii': 16125,
+            'coco': 98101,
+            'mpii_3d': 166311,
             'h36m': 113231,
 
             # SMPL/MOSH:
@@ -184,14 +184,14 @@ class Config(object):
         }
 
         val_samples_per_dataset = {
-            'lsp': 999,
-            'coco': 4802,
+            'lsp': 997,
+            'coco': 3984,
             'h36m': 6120,
         }
 
         test_samples_per_dataset = {
-            'mpii_3d': 1955,
-            'h36m': 40414,
+            'mpii_3d': 1958,
+            'h36m': 40411,
         }
 
         if split == 'train':
@@ -211,10 +211,11 @@ class Config(object):
         print('Saving logs to {}'.format(self.LOG_DIR))
 
         config_path = os.path.join(self.LOG_DIR, "config.json")
-        config_dict = dict([(a, getattr(self, a)) for a in dir(self)
-                            if not a.startswith("_") and not callable(getattr(self, a))])
-        with open(config_path, 'w') as fp:
-            json.dump(config_dict, fp, indent=4, sort_keys=True)
+        if not os.path.exists(config_path):
+            config_dict = dict([(a, getattr(self, a)) for a in dir(self)
+                                if not a.startswith("_") and not callable(getattr(self, a))])
+            with open(config_path, 'w') as fp:
+                json.dump(config_dict, fp, indent=4, sort_keys=True)
 
     def display(self):
         """Display Configuration values."""

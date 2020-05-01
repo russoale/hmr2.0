@@ -29,7 +29,7 @@ class TestDiscriminator(tf.test.TestCase):
         shape_dis = ShapeDiscriminator()
         outputs = shape_dis(inputs)
         mean = tf.reduce_mean(outputs)
-        expected = np.array(0.23714292, dtype=np.float32)
+        expected = np.array(-0.20134258, dtype=np.float32)
 
         self.assertAllCloseAccordingToType(expected, mean)
         self.assertEqual(outputs.shape, (self.batch_size, 1))
@@ -39,7 +39,7 @@ class TestDiscriminator(tf.test.TestCase):
         c_pose_dis = CommonPoseDiscriminator()
         outputs = c_pose_dis(inputs)
         mean = tf.reduce_mean(outputs)
-        expected = np.array(-0.06846898, dtype=np.float32)
+        expected = np.array(0.131552681, dtype=np.float32)
 
         self.assertAllCloseAccordingToType(expected, mean)
         self.assertEqual(outputs.shape, (self.batch_size, self.num_kp, 1, 32))
@@ -69,15 +69,16 @@ class TestDiscriminator(tf.test.TestCase):
         dis = Discriminator()
         outputs = dis(inputs)
         mean = tf.reduce_mean(outputs)
-        expected = np.array(0.184970, dtype=np.float32)
+        expected = np.array(0.19671753, dtype=np.float32)
 
         self.assertAllCloseAccordingToType(expected, mean)
         self.assertEqual(outputs.shape, (self.batch_size, 25))
 
 
 def create_info():
-    inputs = tf.reshape(tf.tile(tf.range(85, dtype=tf.float32), [64]), (64, -1))
     discriminator = Discriminator()
+    config = discriminator.config
+    inputs = tf.ones((2, (config.NUM_JOINTS * 9 + config.NUM_SHAPE_PARAMS)))
     _ = discriminator(inputs)
     discriminator.summary()
     print('\n\n\n')

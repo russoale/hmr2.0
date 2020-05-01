@@ -377,7 +377,7 @@ class Model:
 
         mpjpe, mpjpe_aligned, sequences = [], [], []
 
-        total = int(self.config.NUM_TEST_SAMPLES)
+        total = int(self.config.NUM_TEST_SAMPLES / self.config.BATCH_SIZE)
         for image_data in tqdm(ds_test, total=total, position=0, desc='testing'):
             image, kp3d, sequence = image_data[0], image_data[1], image_data[2]
             kp3d_mpjpe, kp3d_mpjpe_aligned = self._test_step(image, kp3d)
@@ -388,10 +388,12 @@ class Model:
 
         print('Time taken for testing {} sec\n'.format(time.time() - start))
 
-        def convert(tensor):
-            return tf.squeeze(tf.stack(tensor))
+        def convert(tensor, num=None):
+            if num is None:
+                num = self.config.NUM_KP3D
+            return tf.squeeze(tf.reshape(tf.stack(tensor), [-1, num]))
 
-        mpjpe, mpjpe_aligned, sequences = convert(mpjpe), convert(mpjpe_aligned), convert(sequences)
+        mpjpe, mpjpe_aligned, sequences = convert(mpjpe), convert(mpjpe_aligned), convert(sequences, 1)
         result_dict = {"kp3d_mpjpe": mpjpe, "kp3d_mpjpe_aligned": mpjpe_aligned, "seq": sequences, }
 
         return result_dict

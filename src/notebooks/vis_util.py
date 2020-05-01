@@ -241,9 +241,9 @@ def get_color(left_right, i, lcolor='#3498db', rcolor='#e74c3c'):
     if left_right[i] == -1:
         color = '#000000'
     elif left_right[i] == 1:
-        color = lcolor
-    else:
         color = rcolor
+    else:
+        color = lcolor
     return color
 
 
