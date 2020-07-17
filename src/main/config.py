@@ -39,13 +39,16 @@ class Config(object):
     # path to saved smpl data in tf record format
     # folder names should be same as defined in SMPL_DATASETS config (see below):
     # e.g. SMPL_DATASETS = ['cmu', 'joint_lim']
-    SMPL_DATA_DIR = os.path.join(ROOT_DATA_DIR, 'new_records', 'smpl')
+    SMPL_DATA_DIR = os.path.join(ROOT_DATA_DIR, 'tfrecords', 'smpl')
 
     # path to the neutral smpl model
     SMPL_MODEL_PATH = os.path.join(ROOT_DATA_DIR, 'models', 'neutral_smpl_coco_regressor.pkl')
 
     # path to mean theta h5 file
     SMPL_MEAN_THETA_PATH = os.path.join(ROOT_DATA_DIR, 'models', 'neutral_smpl_mean_params.h5')
+
+    # path to the custom regressors
+    CUSTOM_REGRESSOR_PATH = os.path.join(ROOT_DATA_DIR, 'models', 'regressors', '*/*.npy')
 
     # ------HMR parameters:------
     #
@@ -75,8 +78,7 @@ class Config(object):
     SEED = 42
 
     # list of datasets to use for training
-    # DATASETS = ['lsp', 'lsp_ext', 'mpii', 'coco', 'mpii_3d', 'h36m']  # paired setting, except h36m mosh not available
-    DATASETS = ['lsp', 'lsp_ext', 'coco', 'mpii']  # unpaired setting
+    DATASETS = ['lsp', 'lsp_ext', 'mpii', 'coco', 'mpii_3d', 'h36m', 'total_cap']
 
     # datasets to use for adversarial prior training
     SMPL_DATASETS = ['cmu', 'joint_lim']  # , 'h36m']
@@ -176,7 +178,8 @@ class Config(object):
             'mpii': 16125,
             'coco': 98101,
             'mpii_3d': 166311,
-            'h36m': 113231,
+            'h36m': 311950,
+            'total_cap': 75060,
 
             # SMPL/MOSH:
             'cmu': 3934266,
@@ -186,12 +189,13 @@ class Config(object):
         val_samples_per_dataset = {
             'lsp': 997,
             'coco': 3984,
-            'h36m': 6120,
+            'h36m': 15883,
         }
 
         test_samples_per_dataset = {
-            'mpii_3d': 1958,
-            'h36m': 40411,
+            'mpii_3d': 2874,
+            'h36m': 110128,
+            'total_cap': 73871,
         }
 
         if split == 'train':

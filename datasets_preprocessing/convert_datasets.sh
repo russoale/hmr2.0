@@ -28,6 +28,10 @@ python mpii_3d_to_tfrecords.py --data_directory $DATA_DIR --output_directory $OU
 # H36M:
 python h36m_to_tfrecords.py --data_directory $DATA_DIR --output_directory $OUT_DIR --dataset_name h36m
 
+# Total Capture:
+python total_cap_to_tfrecords.py --data_directory $DATA_DIR --output_directory $OUT_DIR --dataset_name total_cap
+
+
 # SMPL CMU:
 python smpl_to_tfrecords.py --data_directory $DATA_DIR/smpl --output_directory $OUT_DIR/smpl --dataset_name cmu
 

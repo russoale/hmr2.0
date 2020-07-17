@@ -130,7 +130,7 @@ class TFRecordConverter(abc.ABC):
         print('filter data...')
 
         for d in self.__data_set_splits:
-            if d.config.has_3d:
+            if d.config.has_3d and d.config.name is not 'test':
                 use_these = self._filter_3d_frames(d.kps_3d)
                 d.image_paths = d.image_paths[use_these]
                 d.kps_2d = d.kps_2d[use_these]
@@ -205,6 +205,9 @@ class TFRecordConverter(abc.ABC):
 
     def _scale_and_crop(self, universal_order, img_path, kp2d, vis, kps_3d):
         """Scale image and keypoints and crop image given TFRecordConverterConfig"""
+        if not path.exists(img_path):
+            return
+
         image = tf.image.decode_image(open(img_path, 'rb').read(), channels=3).numpy()
         scale, center = self._calc_scale_and_center(kp2d, vis, universal_order)
         image, scale = resize_img(image, scale)

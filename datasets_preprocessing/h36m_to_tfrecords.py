@@ -1,10 +1,11 @@
 import csv
+from os import listdir
+from os.path import join
 from time import time
 
 import numpy as np
-from os import listdir
-from os.path import join
 
+from converter.helpers import CameraInfo
 from converter.tfrecord_converter import TFRecordConverter, DataSetConfig, DataSetSplit
 
 
@@ -18,13 +19,16 @@ class H36MConverter(TFRecordConverter):
 
         self.split_dict = {
             'train': {
-                'sub_ids': [1, 5, 6, 7, 8]
+                'sub_ids': [1, 5, 6, 7, 8],
+                'skip_frames': -1
             },
             'val': {
-                'sub_ids': [9]
+                'sub_ids': [9],
+                'skip_frames': -1
             },
             'test': {
-                'sub_ids': [9, 11]
+                'sub_ids': [9, 11],
+                'skip_frames': 5
             },
         }
 
@@ -53,8 +57,7 @@ class H36MConverter(TFRecordConverter):
                                 cam_info.append(key)
                             else:
                                 key = row[0]
-                            value = row[1:]
-                            content[key] = value
+                            content[key] = row[1:]
                         content['#camerainfo'] = cam_info
 
                     cam_infos = {cam: CameraInfo.from_line(content[cam]) for cam in content['#camerainfo']}
@@ -94,41 +97,15 @@ class H36MConverter(TFRecordConverter):
             kps_3d = np.asarray(kps_3d)
             sequences = np.asarray(sequences) if split_name == 'test' else None
 
+            if value['skip_frames'] > 1:
+                skip_frames = value['skip_frames']
+                image_paths = image_paths[::skip_frames]
+                kps_2d = kps_2d[::skip_frames]
+                kps_3d = kps_3d[::skip_frames]
+                sequences = sequences[::skip_frames] if split_name == 'test' else None
+
             h36m_config = DataSetConfig(split_name, has_3d=True, reorder=self.h36m_order, lsp_only=True)
             self.data_set_splits.append(DataSetSplit(h36m_config, image_paths, kps_2d, kps_3d=kps_3d, seqs=sequences))
-
-
-class CameraInfo:
-
-    def __init__(self):
-        self.name = ''
-        self.suffix = ''
-
-        # extrinsic parameters
-        self.R = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]], dtype=np.float32)
-        self.T = np.array([0, 0, 0], dtype=np.float32)
-
-        # intrinsic parameters
-        self.f = np.array([1000, 1000], dtype=np.float32)
-        self.o = np.array([500, 500], dtype=np.float32)
-
-    @staticmethod
-    def from_line(camera_info_line):
-        """Read method to be used by the annotation class while reading a file
-        Args:
-            camera_info_line: The line specifying the camera info as taken from the #Camerainfo section,
-                            with the leftmost placeholder removed
-        Returns:
-            A camera info class with the data loaded from the camera_info_line
-        """
-        camera_info = CameraInfo()
-        camera_info.name = camera_info_line[0]
-        camera_info.suffix = camera_info_line[1]
-        camera_info.R = np.array(camera_info_line[2:11], dtype=np.float32).reshape((3, 3))
-        camera_info.T = np.array(camera_info_line[11:14], dtype=np.float32)
-        camera_info.f = np.array(camera_info_line[14:16], dtype=np.float32)
-        camera_info.o = np.array(camera_info_line[16:18], dtype=np.float32)
-        return camera_info
 
 
 if __name__ == '__main__':

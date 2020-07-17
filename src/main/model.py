@@ -107,7 +107,7 @@ class Model:
             print('Checkpoint restored from {}'.format(restore_path))
 
     def _setup_summary(self):
-        self.summary_path = os.path.join(self.config.LOG_DIR, "hmr2.0")
+        self.summary_path = os.path.join(self.config.LOG_DIR, 'hmr2.0', '3D_{}'.format(self.config.USE_3D))
         self.summary_writer = tf.summary.create_file_writer(self.summary_path)
 
         self.generator_loss_log = tf.keras.metrics.Mean('generator_loss', dtype=tf.float32)

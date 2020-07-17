@@ -1,8 +1,8 @@
 pycocotools
-opencv-python
 tqdm
 matplotlib==3.1.2
 numpy==1.18.1
 scipy==1.4.1
-tensorflow-gpu==2.1.0
-trimesh==3.6.20
+opencv-python==4.1.2.30
+tensorflow==2.1.0
+# tensorflow-gpu==2.1.0

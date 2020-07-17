@@ -1,4 +1,5 @@
 import pickle
+from glob import glob
 
 import numpy as np
 import tensorflow as tf
@@ -15,10 +16,10 @@ class Smpl(layers.Layer):
         super(Smpl, self).__init__()
 
         self.config = Config()
-        if self.config.JOINT_TYPE not in ["cocoplus", "lsp"]:
-            raise Exception("unknow joint type: {}, it must be either cocoplus or lsp".format(self.config.JOINT_TYPE))
+        if self.config.JOINT_TYPE not in ['cocoplus', 'lsp', 'custom']:
+            raise Exception('unknow joint type: {}, it must be either cocoplus or lsp'.format(self.config.JOINT_TYPE))
 
-        with open(self.config.SMPL_MODEL_PATH, "rb") as f:
+        with open(self.config.SMPL_MODEL_PATH, 'rb') as f:
             model = pickle.load(f)
 
         def tf_variable(value, name):
@@ -26,19 +27,19 @@ class Smpl(layers.Layer):
             return tf.Variable(converted, name=name, trainable=False)
 
         # Mean template vertices: [6890 x 3]
-        self.vertices_template = tf_variable(model["v_template"], name="vertices_template")
+        self.vertices_template = tf_variable(model['v_template'], name='vertices_template')
 
         # Shape blend shape basis: [6980 x 3 x 10]
-        self.shapes = tf_variable(model["shapedirs"], name="shapes")
+        self.shapes = tf_variable(model['shapedirs'], name='shapes')
         self.num_betas = self.shapes.shape[-1]
         # [6980 x 3 x 10] -> [10 x (6980 * 3)]
         self.shapes = tf.transpose(tf.reshape(self.shapes, [-1, self.num_betas]))
 
         # Regressor for joint locations given [6890 x 24]
-        self.smpl_joint_regressor = tf_variable(model["J_regressor"].T.todense(), name="smpl_joint_regressor")
+        self.smpl_joint_regressor = tf_variable(model['J_regressor'].T.todense(), name='smpl_joint_regressor')
 
         # Pose blend shape basis: [6890 x 3 x 207]
-        self.pose = tf_variable(model["posedirs"], name="pose")
+        self.pose = tf_variable(model['posedirs'], name='pose')
         # [(6890 * 3) x 207] -> [207 x (6890 * 3)]
         self.pose = tf.transpose(tf.reshape(self.pose, [-1, self.pose.shape[-1]]))
 
@@ -46,12 +47,18 @@ class Smpl(layers.Layer):
         self.lbs_weights = tf_variable(model['weights'], name='lbs_weights')
 
         # load face vertices for rendering
-        self.faces = tf.convert_to_tensor(model["f"], dtype=tf.float32)
+        self.faces = tf.convert_to_tensor(model['f'], dtype=tf.float32)
 
         # This returns 19 coco keypoints: [6890 x 19]
-        self.joint_regressor = tf_variable(model['cocoplus_regressor'].T.todense(), name="joint_regressor")
+        self.joint_regressor = tf_variable(model['cocoplus_regressor'].T.todense(), name='joint_regressor')
         if self.config.JOINT_TYPE == 'lsp':  # 14 LSP joints!
             self.joint_regressor = self.joint_regressor[:, :14]
+
+        if self.config.JOINT_TYPE == 'custom':
+            regressors = glob(self.config.CUSTOM_REGRESSOR_PATH)
+            for regressor in regressors:
+                regressor = tf.convert_to_tensor(np.load(regressor))
+                self.joint_regressor = tf.concat([self.joint_regressor, regressor], -1)
 
         self.ancestors = model['kintree_table'][0].astype(np.int32)
         self.identity = tf.eye(3)
@@ -143,7 +150,7 @@ class Smpl(layers.Layer):
             _vertices: [batch x 6890 x 3 x 1]
             file_name: string
         """
-        file = "./{}.obj".format(file_name)
+        file = './{}.obj'.format(file_name)
         with open(file, 'w') as fp:
             for v in _vertices:
                 fp.write('v %f %f %f\n' % (v[0], v[1], v[2]))

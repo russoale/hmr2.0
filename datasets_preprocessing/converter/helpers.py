@@ -53,3 +53,41 @@ def resize_img(img, scale):
     # This is scale factor of [height, width] i.e. [y, x]
     actual_factor = [new_size[0] / float(img.shape[0]), new_size[1] / float(img.shape[1])]
     return new_img, actual_factor
+
+
+############################################################
+#  Helpers for proprietary dataset structures
+############################################################
+
+
+class CameraInfo:
+
+    def __init__(self):
+        self.name = ''
+        self.suffix = ''
+
+        # extrinsic parameters
+        self.R = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]], dtype=np.float32)
+        self.T = np.array([0, 0, 0], dtype=np.float32)
+
+        # intrinsic parameters
+        self.f = np.array([1000, 1000], dtype=np.float32)
+        self.o = np.array([500, 500], dtype=np.float32)
+
+    @staticmethod
+    def from_line(camera_info_line):
+        """Read method to be used by the annotation class while reading a file
+        Args:
+            camera_info_line: The line specifying the camera info as taken from the #Camerainfo section,
+                            with the leftmost placeholder removed
+        Returns:
+            A camera info class with the data loaded from the camera_info_line
+        """
+        camera_info = CameraInfo()
+        camera_info.name = camera_info_line[0]
+        camera_info.suffix = camera_info_line[1]
+        camera_info.R = np.array(camera_info_line[2:11], dtype=np.float32).reshape((3, 3))
+        camera_info.T = np.array(camera_info_line[11:14], dtype=np.float32)
+        camera_info.f = np.array(camera_info_line[14:16], dtype=np.float32)
+        camera_info.o = np.array(camera_info_line[16:18], dtype=np.float32)
+        return camera_info

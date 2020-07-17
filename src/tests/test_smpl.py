@@ -17,8 +17,8 @@ class TestSmpl(tf.test.TestCase):
 
     def setUp(self):
         super(TestSmpl, self).setUp()
-        config = LocalConfig()
-        self.inputs = tf.ones((config.BATCH_SIZE, (config.NUM_POSE_PARAMS + config.NUM_SHAPE_PARAMS)))
+        self.config = LocalConfig()
+        self.inputs = tf.ones((self.config.BATCH_SIZE, (self.config.NUM_POSE_PARAMS + self.config.NUM_SHAPE_PARAMS)))
 
     def test_smpl_loaded_correctly(self):
         smpl = Smpl()
@@ -29,7 +29,13 @@ class TestSmpl(tf.test.TestCase):
         self.assertEqual((6890, 24), smpl.lbs_weights.shape)
         self.assertEqual((6890, 19), smpl.joint_regressor.shape)
 
+    def test_smpl_loaded_correctly_with_custom_regressors(self):
+        self.config.JOINT_TYPE = 'custom'
+        smpl = Smpl()
+        self.assertEqual((6890, 20), smpl.joint_regressor.shape)
+
     def test_smpl_output(self):
+        self.config.JOINT_TYPE = 'cocoplus'
         smpl = Smpl()
         outputs = smpl(self.inputs)
 
