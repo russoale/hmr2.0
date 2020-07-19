@@ -1,14 +1,20 @@
 from glob import glob
+from os.path import join
 from time import time
 
 import numpy as np
 import scipy.io as sio
-from os.path import join
 
 from converter.tfrecord_converter import DataSetConfig, DataSetSplit, TFRecordConverter
 
 
 class LspConverter(TFRecordConverter):
+
+    def __init__(self):
+        self.lsp_order = ['ankle_r', 'knee_r', 'hip_r', 'hip_l', 'knee_l', 'ankle_l', 'wrist_r',
+                          'elbow_r', 'shoulder_r', 'shoulder_l', 'elbow_l', 'wrist_l', 'neck', 'brain']
+
+        super().__init__()
 
     def prepare_data(self):
         image_paths = np.array(sorted([f for f in glob(join(self.data_dir, 'images/*.jpg'))]))
@@ -18,7 +24,7 @@ class LspConverter(TFRecordConverter):
             kps_2d = joints[:, :, :2]
             vis = joints[:, :, 2].astype(np.int64)
 
-            lsp_config = DataSetConfig('train', False)
+            lsp_config = DataSetConfig('train', has_3d=False, reorder=self.lsp_order)
             self.data_set_splits.append(DataSetSplit(lsp_config, image_paths, kps_2d, vis))
 
         elif self.args.dataset_name == 'lsp':
@@ -26,10 +32,10 @@ class LspConverter(TFRecordConverter):
             kps_2d = joints[:, :, :2]
             vis = (1 - joints[:, :, 2]).astype(np.int64)
 
-            lsp_config_train = DataSetConfig('train', False)
+            lsp_config_train = DataSetConfig('train', has_3d=False, reorder=self.lsp_order)
             self.data_set_splits.append(DataSetSplit(lsp_config_train, image_paths[:1000], kps_2d[:1000], vis[:1000]))
 
-            lsp_config_test = DataSetConfig('val', False)
+            lsp_config_test = DataSetConfig('val', has_3d=False, reorder=self.lsp_order)
             self.data_set_splits.append(DataSetSplit(lsp_config_test, image_paths[1000:], kps_2d[1000:], vis[1000:]))
         else:
             raise Exception('unknown LSP dataset name')

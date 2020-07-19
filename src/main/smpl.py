@@ -1,5 +1,5 @@
 import pickle
-from glob import glob
+from os.path import join
 
 import numpy as np
 import tensorflow as tf
@@ -50,15 +50,19 @@ class Smpl(layers.Layer):
         self.faces = tf.convert_to_tensor(model['f'], dtype=tf.float32)
 
         # This returns 19 coco keypoints: [6890 x 19]
-        self.joint_regressor = tf_variable(model['cocoplus_regressor'].T.todense(), name='joint_regressor')
+        # if JOINT_TYPE == 'custom' this adds additional regressors given
+        # the generated .npy files by keypoint maker
+        self.joint_regressor = model['cocoplus_regressor'].todense()
+        if self.config.JOINT_TYPE == 'custom':
+            if len(self.config.CUSTOM_REGRESSOR_IDX) > 0:
+                for index, file_name in self.config.CUSTOM_REGRESSOR_IDX.items():
+                    file = join(self.config.CUSTOM_REGRESSOR_PATH, file_name)
+                    regressor = np.load(file)
+                    self.joint_regressor = np.insert(self.joint_regressor, index, np.squeeze(regressor), 0)
+
+        self.joint_regressor = tf_variable(self.joint_regressor.T, name='joint_regressor')
         if self.config.JOINT_TYPE == 'lsp':  # 14 LSP joints!
             self.joint_regressor = self.joint_regressor[:, :14]
-
-        if self.config.JOINT_TYPE == 'custom':
-            regressors = glob(self.config.CUSTOM_REGRESSOR_PATH)
-            for regressor in regressors:
-                regressor = tf.convert_to_tensor(np.load(regressor))
-                self.joint_regressor = tf.concat([self.joint_regressor, regressor], -1)
 
         self.ancestors = model['kintree_table'][0].astype(np.int32)
         self.identity = tf.eye(3)
@@ -118,14 +122,13 @@ class Smpl(layers.Layer):
         # [batch x 6890 x 3 x 1]
         vertices = v_posed_homo[:, :, :3, 0]
 
-        # Get final coco or lsp joints:
+        # Get final coco or lsp or custom joints:
         joints = self.compute_joints(vertices, self.joint_regressor)
 
         return vertices, joints, rotations
 
     def compute_output_shape(self, input_shape):
-        num_joints = 19 if self.config.JOINT_TYPE == 'cocoplus' else 14
-        return (None, 6890, 3), (None, num_joints, 3), (None, self.config.NUM_JOINTS_GLOBAL, 3, 3)
+        return (None, 6890, 3), (None, self.config.NUM_KP2D, 3), (None, self.config.NUM_JOINTS_GLOBAL, 3, 3)
 
     def compute_joints(self, vertices, regressor):
         """computes joint location from vertices by regressor

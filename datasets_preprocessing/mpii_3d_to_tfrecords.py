@@ -1,7 +1,7 @@
+from os.path import join
 from time import time
 
 import numpy as np
-from os.path import join
 
 from converter.tfrecord_converter import TFRecordConverter, DataSetConfig, DataSetSplit
 
@@ -9,9 +9,12 @@ from converter.tfrecord_converter import TFRecordConverter, DataSetConfig, DataS
 class Mpii3dConverter(TFRecordConverter):
 
     def __init__(self):
-        self.mpii_3d_ids = np.array([8, 6, 15, 16, 17, 10, 11, 12, 24, 25, 26, 19, 20, 21, 5, 4, 7]) - 1
+        # Only use H3.6M annotated joints instead 28 mpii_3d
+        # extended with toes
+        self.mpii_3d_ids = np.array([8, 6, 15, 16, 17, 10, 11, 12, 24, 25, 26, 19, 20, 21, 5, 4, 7, 23, 28]) - 1
         self.mpii_3d_order = ['brain', 'neck', 'shoulder_r', 'elbow_r', 'wrist_r', 'shoulder_l', 'elbow_l', 'wrist_l',
-                              'hip_r', 'knee_r', 'ankle_r', 'hip_l', 'knee_l', 'ankle_l', 'pelvis', 'spine', 'head']
+                              'hip_r', 'knee_r', 'ankle_r', 'hip_l', 'knee_l', 'ankle_l', 'pelvis', 'spine', 'head',
+                              'toes_l', 'toes_r']
 
         self.split_dict = {
             'train': {
@@ -19,11 +22,12 @@ class Mpii3dConverter(TFRecordConverter):
                 'seq_ids': [1, 2],
                 'cam_ids': [0, 1, 2, 4, 5, 6, 7, 8]
             },
-            'test': {
-                'sub_ids': [1, 2, 3, 4, 5, 6],
-                'seq_ids': None,
-                'cam_ids': None
-            }
+            # test set does not contain toes annotation
+            # 'test': {
+            #     'sub_ids': [1, 2, 3, 4, 5, 6],
+            #     'seq_ids': None,
+            #     'cam_ids': None
+            # }
         }
         super().__init__()
 
@@ -60,7 +64,7 @@ class Mpii3dConverter(TFRecordConverter):
             kps_3d = np.asarray(kps_3d)
             sequences = np.asarray(sequences) if split_name == 'test' else None
 
-            mpii_config = DataSetConfig(split_name, True, self.mpii_3d_order)
+            mpii_config = DataSetConfig(split_name, True, self.mpii_3d_order, lsp_only=True)
             self.data_set_splits.append(DataSetSplit(mpii_config, image_paths, kps_2d, kps_3d=kps_3d, seqs=sequences))
 
     def convert_train(self, sub_id, seq_id, cam_id):
@@ -76,7 +80,6 @@ class Mpii3dConverter(TFRecordConverter):
         kp2d = res['annot2'][cam_id].astype(np.float32).reshape(num_images, -1, 2)
         kp3d = res['annot3'][cam_id].astype(np.float32).reshape(num_images, -1, 3)
 
-        # Only use H3.6M annotated joints instead 28 mpii_3d
         kp2d = kp2d[:, self.mpii_3d_ids, :]
         kp3d = kp3d[:, self.mpii_3d_ids, :]
         kp3d = np.divide(kp3d, np.float32(1000.), dtype=np.float32)  # Fix units: mm -> meter

@@ -11,7 +11,12 @@ class Dataset(object):
 
     def __init__(self):
         self.config = Config()
-        self.flip_ids_kp2d = tf.constant([5, 4, 3, 2, 1, 0, 11, 10, 9, 8, 7, 6, 12, 13, 14, 16, 15, 18, 17])
+        if self.config.JOINT_TYPE == 'cocoplus':
+            # flipping ids for lsp with coco
+            self.flip_ids_kp2d = tf.constant([5, 4, 3, 2, 1, 0, 11, 10, 9, 8, 7, 6, 12, 13, 14, 16, 15, 18, 17])
+        else:
+            # flipping ids for lsp with coco including custom added toes
+            self.flip_ids_kp2d = tf.constant([7, 6, 5, 4, 3, 2, 1, 0, 13, 12, 11, 10, 9, 8, 14, 15, 16, 18, 17, 20, 19])
         self.flip_ids_kp3d = self.flip_ids_kp2d[:self.config.NUM_KP3D]
 
     ############################################################

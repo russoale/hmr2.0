@@ -31,7 +31,7 @@ class SmplWidget(Qt5PygletWidget):
         super(SmplWidget, self).__init__(parent)
 
     # noinspection PyAttributeOutsideInit
-    def initialize_scene(self, scene, regressor, smooth=True, profile=False):
+    def initialize_scene(self, scene, regressor, custom_regressor=None, smooth=True, profile=False):
         lights = {}
         for i, light in enumerate(scene.lights[:7]):
             matrix = scene.graph.get(light.name)[0]
@@ -49,6 +49,7 @@ class SmplWidget(Qt5PygletWidget):
 
         self._scene = scene
         self._regressor = regressor
+        self._custom_regressor = custom_regressor
         self._smooth = smooth
 
         # save initial camera transform
@@ -305,26 +306,37 @@ class SmplWidget(Qt5PygletWidget):
 
         self.view['show_joints'] = not self.view['show_joints']
         if self.view['show_joints']:
-            joints_colors = vis.random_color()
             colors = np.array([[200, 200, 200, 255]])
             colors = np.tile(colors, self._regressor.shape[1]).reshape(-1, 4)
-            for regressor in self._regressor:
-                color_ids = np.where(regressor > 0.)
-                colors[color_ids] = joints_colors
+            colors = self._add_joints(colors, mesh, self._regressor)
 
-            x = np.matmul(self._regressor, mesh.vertices[:, 0])
-            y = np.matmul(self._regressor, mesh.vertices[:, 1])
-            z = np.matmul(self._regressor, mesh.vertices[:, 2])
-            joints = np.vstack((x, y, z)).T
-            joints = PointCloud(joints, colors=joints_colors, process=False)
-            self._scene.add_geometry(joints, geom_name='reg_joints')
+            if self._custom_regressor is not None:
+                colors = self._add_joints(colors, mesh, self._custom_regressor, geom_name='cust_reg_joints')
+
         else:
             colors = np.array([[200, 200, 200, 255]])
             colors = np.tile(colors, self._regressor.shape[1]).reshape(-1, 4)
             self._scene.delete_geometry('reg_joints')
+            if self._custom_regressor is not None:
+                self._scene.delete_geometry('cust_reg_joints')
 
         mesh.visual.vertex_colors = colors
         self.updateGL()
+
+    def _add_joints(self, colors, mesh, regressor, geom_name='reg_joints'):
+        joint_color = vis.random_color()
+        for reg in regressor:
+            color_ids = np.where(reg > 0.)
+            colors[color_ids] = joint_color
+
+        x = np.matmul(regressor, mesh.vertices[:, 0])
+        y = np.matmul(regressor, mesh.vertices[:, 1])
+        z = np.matmul(regressor, mesh.vertices[:, 2])
+        joints = np.vstack((x, y, z)).T
+        joints = PointCloud(joints, colors=joint_color, process=False)
+        self._scene.add_geometry(joints, geom_name=geom_name)
+
+        return colors
 
     def _toggle_wireframe(self):
         self.view['wireframe'] = not self.view['wireframe']

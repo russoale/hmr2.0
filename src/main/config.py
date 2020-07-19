@@ -3,8 +3,9 @@
 # the configurations you need to change.
 
 import json
-import os
 from datetime import datetime
+
+import os
 
 
 class Config(object):
@@ -20,10 +21,14 @@ class Config(object):
     # ------Directory settings:------
     #
     # root directory
+    ROOT_PROJECT_DIR = os.path.abspath(os.path.join(__file__, '..', '..', '..'))
+
+    # root directory
     ROOT_DATA_DIR = os.path.join('/', 'data', 'ssd1', 'russales')
 
     # path to save training models to
     LOG_DIR = os.path.join(ROOT_DATA_DIR, 'logs', datetime.now().strftime("%d%m%Y-%H%M%S"))
+    LOG_DIR = os.path.join(ROOT_DATA_DIR, 'test_logs', datetime.now().strftime("%d%m%Y-%H%M%S"))
 
     # path to specific checkpoint to be restored
     # if LOG_DIR is set to specific training and RESTORE_PATH is None
@@ -35,6 +40,7 @@ class Config(object):
     # folder names should be same as defined in DATASET config (see below):
     # e.g. DATASETS = ['coco', 'mpii_3d', 'h36m']
     DATA_DIR = os.path.join(ROOT_DATA_DIR, 'tfrecords')
+    DATA_DIR = os.path.join(ROOT_DATA_DIR, 'tfrecords_with_toes')
 
     # path to saved smpl data in tf record format
     # folder names should be same as defined in SMPL_DATASETS config (see below):
@@ -42,13 +48,13 @@ class Config(object):
     SMPL_DATA_DIR = os.path.join(ROOT_DATA_DIR, 'tfrecords', 'smpl')
 
     # path to the neutral smpl model
-    SMPL_MODEL_PATH = os.path.join(ROOT_DATA_DIR, 'models', 'neutral_smpl_coco_regressor.pkl')
+    SMPL_MODEL_PATH = os.path.join(ROOT_PROJECT_DIR, 'models', 'neutral_smpl_coco_regressor.pkl')
 
     # path to mean theta h5 file
-    SMPL_MEAN_THETA_PATH = os.path.join(ROOT_DATA_DIR, 'models', 'neutral_smpl_mean_params.h5')
+    SMPL_MEAN_THETA_PATH = os.path.join(ROOT_PROJECT_DIR, 'models', 'neutral_smpl_mean_params.h5')
 
     # path to the custom regressors
-    CUSTOM_REGRESSOR_PATH = os.path.join(ROOT_DATA_DIR, 'models', 'regressors', '*/*.npy')
+    CUSTOM_REGRESSOR_PATH = os.path.join(ROOT_PROJECT_DIR, 'models', 'regressors')
 
     # ------HMR parameters:------
     #
@@ -58,12 +64,30 @@ class Config(object):
     # number of iterations for regressor feedback loop
     ITERATIONS = 3
 
-    # cocoplus (19 keypoints) or lsp 14 keypoints, returned by SMPL
-    JOINT_TYPE = 'cocoplus'
+    # define joint type returned by SMPL
+    # any of [cocoplus, lsp, custom]
+    JOINT_TYPE = 'custom'
 
-    # cocoplus (19 keypoints) or lsp 14 keypoints, returned by SMPL
-    NUM_KP2D = 19 if JOINT_TYPE == 'cocoplus' else 14
-    NUM_KP3D = 14
+    # cocoplus: 19 keypoints
+    # lsp:  14 keypoints
+    # custom: set keypoints according to generated regressors
+    DS_KP2D = {
+        'lsp': 14,
+        'cocoplus': 19,
+        'custom': 21
+    }
+    NUM_KP2D = DS_KP2D.get(JOINT_TYPE)
+    NUM_KP3D = 16
+
+    # indices where custom regressors should be places in to joint regressor
+    # this depends on how universal keypoints are definded in tfrecord_converter, e.g.:
+    # toes left/right have been added accordingly to the scheme of lsp order.
+    # Therefore being places at index 0 (toes_r) and 7 (toes_l) as lsp is ordered
+    # from bottom to top of the body with right side of the body first and then left.
+    CUSTOM_REGRESSOR_IDX = {
+        0: 'regressor_toes_right.npy',
+        7: 'regressor_toes_left.npy'
+    }
 
     # number of epochs to train
     EPOCHS = 55
@@ -87,7 +111,7 @@ class Config(object):
     ENCODER_ONLY = False
 
     # set True to use 3D labels
-    USE_3D = False
+    USE_3D = True
 
     # ------Hyper parameters:------
     #

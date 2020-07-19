@@ -13,11 +13,17 @@ class LocalConfig(Config):
     SMPL_DATA_DIR = os.path.join(ROOT_DATA_DIR, 'src', 'tests', 'files')
     SMPL_MODEL_PATH = os.path.join(ROOT_DATA_DIR, 'models', 'neutral_smpl_coco_regressor.pkl')
     SMPL_MEAN_THETA_PATH = os.path.join(ROOT_DATA_DIR, 'models', 'neutral_smpl_mean_params.h5')
-    CUSTOM_REGRESSOR_PATH = os.path.join(ROOT_DATA_DIR, 'src', 'tests', 'files', 'regressors', '*.npy')
+    CUSTOM_REGRESSOR_PATH = os.path.join(ROOT_DATA_DIR, 'src', 'tests', 'files', 'regressors')
+    CUSTOM_REGRESSOR_IDX = {
+        0: 'regressor_test.npy',
+    }
 
     DATASETS = ['dataset']
     SMPL_DATASETS = ['smpl']
     BATCH_SIZE = 2
+    JOINT_TYPE = 'cocoplus'
+    NUM_KP2D = 19
+    NUM_KP3D = 14
 
     def __init__(self):
         super(LocalConfig, self).__init__()

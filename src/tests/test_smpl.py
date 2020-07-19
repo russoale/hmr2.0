@@ -33,9 +33,10 @@ class TestSmpl(tf.test.TestCase):
         self.config.JOINT_TYPE = 'custom'
         smpl = Smpl()
         self.assertEqual((6890, 20), smpl.joint_regressor.shape)
+        # set back! important due to singleton pattern of config
+        self.config.JOINT_TYPE = 'cocoplus'
 
     def test_smpl_output(self):
-        self.config.JOINT_TYPE = 'cocoplus'
         smpl = Smpl()
         outputs = smpl(self.inputs)
 

@@ -1,7 +1,7 @@
-import abc
 import argparse
 from os import path, makedirs, listdir, environ
 
+import abc
 import cv2
 import numpy as np
 import tensorflow as tf
@@ -14,7 +14,7 @@ from converter.helpers import check_np_array, check_type, int64_feature, float_f
 
 
 class TFRecordConverterConfig:
-    def __init__(self, num_kp2d=19, num_kp3d=14, margin=150, min_vis=6, min_height=60, min_3d_mov=.2, max_scale=150.):
+    def __init__(self, num_kp2d=21, num_kp3d=16, margin=150, min_vis=6, min_height=60, min_3d_mov=.2, max_scale=150.):
         self.num_kp2d = num_kp2d
         self.num_kp3d = num_kp3d
         self.margin = margin
@@ -69,11 +69,11 @@ class TFRecordConverter(abc.ABC):
         """
         print('check data and reorder if necessary...')
 
-        def _reorder(value, reorder=None, lsp_only=False):
+        def _reorder(value, reorder=None, lsp_only=False, num_kp3d=None):
             if reorder is None:
                 return value
 
-            reorder = reorder[:14] if lsp_only else reorder
+            reorder = reorder[:num_kp3d] if lsp_only else reorder
             # this sets missing kp annotations to [0, 0]
             zero = np.zeros_like(value[:, :1])
             return np.concatenate([value, zero], axis=1)[:, reorder]
@@ -86,6 +86,10 @@ class TFRecordConverter(abc.ABC):
             if d.vis is None:
                 # if vis is not available then assuming all keypoints are visible
                 d.vis = np.ones((count, d.kps_2d.shape[1]), dtype=np.int64)
+                # check if any keypoints have been added by reorder
+                # if so set those to not visible
+                not_visible = np.where(d.kps_2d == 0.0)
+                d.vis[not_visible[0], not_visible[1]] = 0
             else:
                 d.vis = _reorder(d.vis, d.config.reorder)
 
@@ -337,8 +341,11 @@ class TFRecordConverter(abc.ABC):
 class DataSetConfig:
 
     def __init__(self, name, has_3d, reorder=None, face_and_shoulder=None, lsp_only=False):
-        self.universal_order = ['ankle_r', 'knee_r', 'hip_r', 'hip_l', 'knee_l', 'ankle_l', 'wrist_r', 'elbow_r',
-                                'shoulder_r', 'shoulder_l', 'elbow_l', 'wrist_l', 'neck', 'brain']
+        # for custom regressors add the corresponding keypoints to universal order
+        # this will force all datasets to add the given keypoint if available else
+        # will pad it with [0, 0] and visibility 0
+        self.universal_order = ['toes_r', 'ankle_r', 'knee_r', 'hip_r', 'hip_l', 'knee_l', 'ankle_l', 'toes_l',
+                                'wrist_r', 'elbow_r', 'shoulder_r', 'shoulder_l', 'elbow_l', 'wrist_l', 'neck', 'brain']
 
         default_face_and_shoulder = ['shoulder_l', 'shoulder_r', 'neck', 'brain']
         if face_and_shoulder is not None:

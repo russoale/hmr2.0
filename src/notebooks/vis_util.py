@@ -1,11 +1,10 @@
-import os
 import pickle
 import sys
 
 import cv2
-import numpy as np
 import matplotlib.pyplot as plot
-
+import numpy as np
+import os
 from matplotlib import gridspec
 
 # to make run from console for module import
@@ -19,33 +18,28 @@ from main.dataset import Dataset
 from main.local import LocalConfig
 
 colors = {
-    'pink': [197, 27, 125],  # L lower leg
-    'light_pink': [233, 163, 201],  # L upper leg
-    'light_green': [161, 215, 106],  # L lower arm
-    'green': [77, 146, 33],  # L upper arm
-    'red': [215, 48, 39],  # head
-    'light_red': [252, 146, 114],  # head
-    'light_orange': [252, 141, 89],  # chest
+    'pink': [197, 27, 125],
+    'light_pink': [233, 163, 201],
+    'green': [77, 146, 33],
+    'light_green': [161, 215, 106],
     'orange': [200, 90, 39],
-    'purple': [118, 42, 131],  # R lower leg
-    'light_purple': [175, 141, 195],  # R upper
-    'light_blue': [145, 191, 219],  # R lower arm
-    'blue': [69, 117, 180],  # R upper arm
-    'gray': [130, 130, 130],  #
-    'white': [255, 255, 255],  #
+    'light_orange': [252, 141, 89],
+    'blue': [69, 117, 180],
+    'light_blue': [145, 191, 219],
+    'red': [215, 48, 39],
+    'purple': [118, 42, 131],
+    'white': [255, 255, 255],
 }
 
 joint_colors = [
-    'light_pink', 'light_pink', 'light_pink',
-    'pink', 'pink', 'pink',
+    'light_pink', 'light_pink', 'light_pink', 'pink',
+    'green', 'light_green', 'light_green', 'light_green',
     'light_blue', 'light_blue', 'light_blue',
-    'blue', 'blue', 'blue',
+    'light_orange', 'light_orange', 'light_orange',
     'purple', 'purple',
     'red',
-    'green', 'green',
-    'white', 'white',
-    'orange', 'light_orange', 'orange', 'light_orange',
-    'pink', 'light_pink'
+    'blue', 'blue',
+    'orange', 'orange',
 ]
 
 
@@ -85,8 +79,8 @@ def _get_parent_ids(joints, index=1):
         parents = np.array([1, 2, 8, 9, 3, 4, 7, 8, -1, -1, 9, 10, 13, -1])
     elif joints.shape[index] == 19:
         parents = np.array([1, 2, 8, 9, 3, 4, 7, 8, 12, 12, 9, 10, 14, -1, 13, -1, -1, 15, 16])
-    elif joints.shape[index] == 25:
-        parents = np.array([24, 2, 8, 9, 3, 23, 7, 8, 12, 12, 9, 10, 14, -1, 13, -1, -1, 15, 16, 23, 24, 19, 20, 4, 1])
+    elif joints.shape[index] == 21:
+        parents = np.array([1, 2, 3, 10, 11, 4, 5, 6, 9, 10, -1, -1, 11, 12, -1, 14, -1, -1, 19, 20])
     else:
         raise ValueError('Unknown skeleton!!')
 
@@ -227,10 +221,21 @@ def _get_child_parent_ids(num_joints):
         parent = np.array([1, 2, 8, 9, 3, 4, 7, 8, 8, 9, 9, 10, 13, 13])
         left_right = np.array([1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1], dtype=bool)
 
+    elif num_joints == 16:
+        child = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
+        parent = np.array([1, 2, 3, 10, 11, 4, 5, 6, 9, 10, 10, 11, 11, 12, 15, 15])
+        left_right = np.array([1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1], dtype=bool)
+
     elif num_joints == 19:
         child = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18])
         parent = np.array([1, 2, 8, 9, 3, 4, 7, 8, 8, 9, 9, 10, 13, 13, 14, 15, 16, 17, 18])
         left_right = np.array([1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, -1, -1, -1, -1, -1, ], dtype=bool)
+
+    elif num_joints == 21:
+        child = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20])
+        parent = np.array([1, 2, 3, 10, 11, 4, 5, 6, 9, 10, 10, 11, 11, 12, 15, 15, 16, 17, 18, 19, 20])
+        left_right = np.array([1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, -1, -1, -1, -1, -1, -1, -1], dtype=bool)
+
     else:
         raise ValueError('Unknown skeleton!!')
 
@@ -255,7 +260,7 @@ def show_2d_pose(joints, vis, ax, img_shape=None):
 
     # Make connection matrix
     for i in np.arange(len(child)):
-        if vis[child[i]] < 0 and vis[parent[i]] < 0:
+        if vis[child[i]] + vis[parent[i]] != 2:
             continue
 
         x, y = [np.array([joints[parent[i], j], joints[child[i], j]]) for j in range(2)]

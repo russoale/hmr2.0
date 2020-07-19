@@ -10,6 +10,7 @@ from PySide2.QtWidgets import QMainWindow
 from PySide2.QtWidgets import QMessageBox
 
 from loader.pose_loader import PoseLoader
+from loader.regressor_loader import RegressorLoader
 from loader.smpl_loader import SmplLoader
 from main_window import Ui_MainWindow
 
@@ -33,6 +34,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.scene_chache = {}
         self.pose_loader = PoseLoader()
         self.smpl_loader = SmplLoader()
+        self.regressor_loader = RegressorLoader()
 
         self.neutral_button.toggled.connect(lambda: self._init_widget())
         if FEMALE not in models:
@@ -50,6 +52,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.reset_button.clicked.connect(lambda: self.reset())
 
         self._init_poses()
+        self._init_regressors()
         self._init_widget()
 
     def _init_poses(self):
@@ -84,11 +87,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         for i in range(poses.shape[0]):
             self.poses_box.addItem('Pose ' + str(i))
 
+    def _init_regressors(self):
+        regressors_path = abspath(join(__file__, '..', 'regressors', '*.npy'))
+        self.regressor_loader.init_regressors(regressors_path)
+
     def _init_widget(self):
         gender = self.get_checked_gender()
-        key = gender + '_pose_' + str(self.poses_box.currentIndex())
+        index = self.poses_box.currentIndex()
+        index = index if index >= 0 else 0
+        key = gender + '_pose_' + str(index)
         scene = self.scene_chache[key]
-        self.openGLWidget.initialize_scene(scene, self.smpl_loader.j_regressor)
+        self.openGLWidget.initialize_scene(scene, self.smpl_loader.j_regressor, self.regressor_loader.joint_regressor)
         self.openGLWidget.updateGL()
 
     def get_checked_gender(self):
@@ -174,7 +183,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         vertices = np.stack(vertices).transpose([0, 2, 1]).reshape([-1, len(final_vertices)])
         joints = np.stack(joints).transpose([0, 2, 1]).reshape([-1])
 
-        vertex_weight = np.zeros([scene['mesh'].vertices.shape[0], ])
+        vertex_weight = np.zeros([6890, ])
         weights = so.nnls(vertices, joints)[0]
         vertex_weight[final_vertices] = weights
 
@@ -229,6 +238,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.poses_box.clear()
 
         self._init_poses()
+        self._init_regressors()
         self._init_widget()
 
 
