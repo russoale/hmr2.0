@@ -1,6 +1,7 @@
+import os
+
 import cv2
 import numpy as np
-import os
 import trimesh
 import trimesh.transformations as trans
 
@@ -86,14 +87,24 @@ if __name__ == '__main__':
     class TrimeshConfig(LocalConfig):
         BATCH_SIZE = 1
         ENCODER_ONLY = True
-        LOG_DIR = os.path.abspath('../../logs/26042020-171733')
+
+        LOG_DIR = os.path.abspath('../../logs/lsp_toes')
+        CUSTOM_REGRESSOR_IDX = {
+            0: 'regressor_toes_right.npy',
+            7: 'regressor_toes_left.npy'
+        }
+        CUSTOM_REGRESSOR_PATH = os.path.abspath('../../models/regressors')
+
+        # LOG_DIR = os.path.abspath('../../logs/lsp')
+        # comment JOINT_TYPE if using lsp only !!!
+        JOINT_TYPE = 'custom'
 
 
     config = TrimeshConfig()
 
     # initialize model
     model = Model()
-    original_img, input_img, params = preprocess_image('images/coco1.png', config.ENCODER_INPUT_SHAPE[0])
+    original_img, input_img, params = preprocess_image('images/coco4.png', config.ENCODER_INPUT_SHAPE[0])
 
     result = model.detect(input_img)
 

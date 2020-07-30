@@ -28,7 +28,6 @@ class Config(object):
 
     # path to save training models to
     LOG_DIR = os.path.join(ROOT_DATA_DIR, 'logs', datetime.now().strftime("%d%m%Y-%H%M%S"))
-    LOG_DIR = os.path.join(ROOT_DATA_DIR, 'test_logs', datetime.now().strftime("%d%m%Y-%H%M%S"))
 
     # path to specific checkpoint to be restored
     # if LOG_DIR is set to specific training and RESTORE_PATH is None
@@ -39,7 +38,7 @@ class Config(object):
     # path to saved dataset in tf record format
     # folder names should be same as defined in DATASET config (see below):
     # e.g. DATASETS = ['coco', 'mpii_3d', 'h36m']
-    DATA_DIR = os.path.join(ROOT_DATA_DIR, 'tfrecords')
+    # DATA_DIR = os.path.join(ROOT_DATA_DIR, 'tfrecords')
     DATA_DIR = os.path.join(ROOT_DATA_DIR, 'tfrecords_with_toes')
 
     # path to saved smpl data in tf record format
@@ -77,7 +76,12 @@ class Config(object):
         'custom': 21
     }
     NUM_KP2D = DS_KP2D.get(JOINT_TYPE)
-    NUM_KP3D = 16
+    DS_KP3D = {
+        'lsp': 14,
+        'cocoplus': 14,
+        'custom': 16
+    }
+    NUM_KP3D = DS_KP3D.get(JOINT_TYPE)
 
     # indices where custom regressors should be places in to joint regressor
     # this depends on how universal keypoints are definded in tfrecord_converter, e.g.:
@@ -111,7 +115,7 @@ class Config(object):
     ENCODER_ONLY = False
 
     # set True to use 3D labels
-    USE_3D = True
+    USE_3D = False
 
     # ------Hyper parameters:------
     #
@@ -201,9 +205,15 @@ class Config(object):
             'lsp_ext': 9896,
             'mpii': 16125,
             'coco': 98101,
-            'mpii_3d': 166311,
-            'h36m': 311950,
-            'total_cap': 75060,
+            # without toes
+            # 'mpii_3d': 166311,
+            # 'h36m': 311950,
+            # 'total_cap': 75060,
+
+            # with toes
+            'mpii_3d': 173126,
+            'h36m': 118955,
+            'total_cap': 81617,
 
             # SMPL/MOSH:
             'cmu': 3934266,
@@ -213,13 +223,18 @@ class Config(object):
         val_samples_per_dataset = {
             'lsp': 997,
             'coco': 3984,
-            'h36m': 15883,
+            # 'h36m': 15883, # without toes
+            'h36m': 6482,
         }
 
         test_samples_per_dataset = {
-            'mpii_3d': 2874,
+            # without toes
+            # 'mpii_3d': 2874,
+            # 'h36m': 110128,
+            # 'total_cap': 73871,
+
             'h36m': 110128,
-            'total_cap': 73871,
+            'total_cap': 184401,
         }
 
         if split == 'train':
