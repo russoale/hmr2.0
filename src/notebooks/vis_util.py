@@ -159,13 +159,13 @@ def visualize(renderer, img, params, verts, cam, joints):
 
     # Render results
     img_kp2d = draw_2d_on_image(img, joints_orig)
-    img_overlay = renderer(vert_shifted, img=img, bg_color=np.array((255.0, 255.0, 255.0, 1)))
+    img_overlay = renderer(vert_shifted, cam=cam, img=img, bg_color=np.array((255.0, 255.0, 255.0, 1)))
     img_mesh = renderer(vert_shifted, img_size=img.shape[:2])
     img_mesh_rot1 = renderer.rotated(vert_shifted, 60, img_size=img.shape[:2])
     img_mesh_rot2 = renderer.rotated(vert_shifted, -60, img_size=img.shape[:2])
 
     gs = gridspec.GridSpec(2, 3)
-    gs.update(wspace=0.05, hspace=0.05)
+    gs.update(wspace=0.25, hspace=0.25)
     plot.axis('off')
     plot.clf()
 

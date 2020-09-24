@@ -22,6 +22,9 @@ class SmplLoader:
         self.parent_id = model['kintree_table'][0].astype(np.int32)
         self.identity = np.eye(3)
 
+        if 'cocoplus_regressor' in model:
+            self.coco_regressor = model["cocoplus_regressor"]
+
     def load_vertices(self, pose=None, shape=None, trans=None):
 
         if pose is None:

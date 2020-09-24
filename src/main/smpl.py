@@ -36,7 +36,7 @@ class Smpl(layers.Layer):
         self.shapes = tf.transpose(tf.reshape(self.shapes, [-1, self.num_betas]))
 
         # Regressor for joint locations given [6890 x 24]
-        self.smpl_joint_regressor = tf_variable(model['J_regressor'].T.todense(), name='smpl_joint_regressor')
+        self.smpl_joint_regressor = tf_variable(model['J_regressor'].T, name='smpl_joint_regressor')
 
         # Pose blend shape basis: [6890 x 3 x 207]
         self.pose = tf_variable(model['posedirs'], name='pose')
@@ -52,13 +52,22 @@ class Smpl(layers.Layer):
         # This returns 19 coco keypoints: [6890 x 19]
         # if JOINT_TYPE == 'custom' this adds additional regressors given
         # the generated .npy files by keypoint maker
-        self.joint_regressor = model['cocoplus_regressor'].todense()
+        self.joint_regressor = model['cocoplus_regressor']
         if self.config.JOINT_TYPE == 'custom':
             if len(self.config.CUSTOM_REGRESSOR_IDX) > 0:
                 for index, file_name in self.config.CUSTOM_REGRESSOR_IDX.items():
                     file = join(self.config.CUSTOM_REGRESSOR_PATH, file_name)
                     regressor = np.load(file)
                     self.joint_regressor = np.insert(self.joint_regressor, index, np.squeeze(regressor), 0)
+        else:
+            if self.config.INITIALIZE_CUSTOM_REGRESSOR:
+                self.joint_regressor_plus = tf.identity(self.joint_regressor)
+                for index, file_name in self.config.CUSTOM_REGRESSOR_IDX.items():
+                    file = join(self.config.CUSTOM_REGRESSOR_PATH, file_name)
+                    regressor = np.load(file).astype(np.float32)
+                    self.joint_regressor_plus = np.insert(self.joint_regressor_plus, index, np.squeeze(regressor), 0)
+
+                self.joint_regressor_plus = tf_variable(self.joint_regressor_plus.T, name='joint_regressor_plus')
 
         self.joint_regressor = tf_variable(self.joint_regressor.T, name='joint_regressor')
         if self.config.JOINT_TYPE == 'lsp':  # 14 LSP joints!
@@ -123,7 +132,10 @@ class Smpl(layers.Layer):
         vertices = v_posed_homo[:, :, :3, 0]
 
         # Get final coco or lsp or custom joints:
-        joints = self.compute_joints(vertices, self.joint_regressor)
+        if self.config.JOINT_TYPE != 'custom' and self.config.INITIALIZE_CUSTOM_REGRESSOR:
+            joints = self.compute_joints(vertices, self.joint_regressor_plus)
+        else:
+            joints = self.compute_joints(vertices, self.joint_regressor)
 
         return vertices, joints, rotations
 

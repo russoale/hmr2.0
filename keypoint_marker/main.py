@@ -15,14 +15,37 @@ from loader.smpl_loader import SmplLoader
 from main_window import Ui_MainWindow
 
 NEUTRAL = 'n'
+NEUTRAL_COCO = 'c'
 FEMALE = 'f'
 MALE = 'm'
 
 models = {
-    NEUTRAL: 'basic_model_neutral.pkl',
+    # !only pick one of NEUTRAL and NEUTRAL_COCO
+    # NEUTRAL: 'basic_model_neutral.pkl',
+    NEUTRAL_COCO: 'basic_model_neutral_coco.pkl',
     # FEMALE: 'basic_model_female.pkl',
     # MALE: 'basic_model_male.pkl',
 }
+
+""" python snippet to modify original pkl file
+    removes chumpy and scipy dependency 
+    converting csc_matrix to numpy array only increases file size about 2MB
+    
+from scipy.sparse import csc_matrix
+from chumpy import Ch
+new_dict = {}
+for key, value in model.items():
+    tmp = value
+    if isinstance(value, csc_matrix):
+        tmp = value.toarray()
+    if isinstance(value, Ch):
+        tmp = value.r
+    new_dict[key] = tmp
+
+with open(file_name, 'wb') as f:
+    pickle.dump(new_dict, f)
+"""
+
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
@@ -40,6 +63,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if FEMALE not in models:
             self.female_button.setVisible(False)
             self.female_button.toggled.connect(lambda: self._init_widget())
+
         if MALE not in models:
             self.male_button.setVisible(False)
             self.male_button.toggled.connect(lambda: self._init_widget())
@@ -65,7 +89,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.smpl_loader.init_model(smpl_model_path)
 
             for i, (pose, shape, transform) in enumerate(zip(poses, shapes, transforms)):
-                verts = self.smpl_loader.load_vertices(pose, shape, transform)
+                if i % 2 == 0:
+                    verts = self.smpl_loader.load_vertices(pose, shape, transform)
+                else:
+                    verts = self.smpl_loader.load_vertices()
                 faces = self.smpl_loader.faces
 
                 mesh = trimesh.Trimesh(vertices=verts,
@@ -97,12 +124,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         index = index if index >= 0 else 0
         key = gender + '_pose_' + str(index)
         scene = self.scene_chache[key]
-        self.openGLWidget.initialize_scene(scene, self.smpl_loader.j_regressor, self.regressor_loader.joint_regressor)
+        self.openGLWidget.initialize_scene(scene, self.smpl_loader, self.regressor_loader.joint_regressor)
         self.openGLWidget.updateGL()
 
     def get_checked_gender(self):
         if self.neutral_button.isChecked():
             gender = NEUTRAL
+            if NEUTRAL_COCO in models:
+                gender = NEUTRAL_COCO
         elif self.female_button.isChecked():
             gender = FEMALE
         elif self.male_button.isChecked():
@@ -180,10 +209,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             joint = np.asarray(scene['joint'].vertices).reshape([-1, 3])
             joints.append(joint)
 
+        vertex_weight = np.zeros([6890, ])
+
         vertices = np.stack(vertices).transpose([0, 2, 1]).reshape([-1, len(final_vertices)])
         joints = np.stack(joints).transpose([0, 2, 1]).reshape([-1])
-
-        vertex_weight = np.zeros([6890, ])
+        # constraint weights to sum up to 1
+        vertices = np.concatenate([vertices, np.ones([1, vertices.shape[1]])], 0)
+        joints = np.concatenate([joints, np.ones(1)])
+        # solve with non negative least squares
         weights = so.nnls(vertices, joints)[0]
         vertex_weight[final_vertices] = weights
 

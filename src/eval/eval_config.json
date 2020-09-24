@@ -1,0 +1,216 @@
+{
+  "runs": [
+    {
+      "eval_date": "02052020-143216",
+      "file_name": "baseline_model_3d",
+      "description": "3d training baseline model",
+      "config": {
+        "data_dir": "tfrecords",
+        "datasets": [
+          "mpii_3d",
+          "h36m_filtered"
+        ],
+        "joint_type": "cocoplus",
+        "init_custom_regressor": false
+      },
+      "eval_angles": false
+    },
+    {
+      "eval_date": "21092020-131749",
+      "file_name": "baseline_model_2d_retrained",
+      "description": "2d training baseline model",
+      "config": {
+        "data_dir": "tfrecords",
+        "datasets": [
+          "mpii_3d",
+          "h36m"
+        ],
+        "joint_type": "cocoplus",
+        "init_custom_regressor": false
+      },
+      "eval_angles": false
+    },
+    {
+      "eval_date": "04052020-181359",
+      "file_name": "baseline_model_2d",
+      "description": "2d training baseline model",
+      "config": {
+        "data_dir": "tfrecords",
+        "datasets": [
+          "mpii_3d",
+          "h36m_filtered"
+        ],
+        "joint_type": "cocoplus",
+        "init_custom_regressor": false
+      },
+      "eval_angles": false
+    },
+    {
+      "eval_date": "04052020-181359",
+      "file_name": "baseline_model_2d_new_h36m_eval_total_cap",
+      "description": "2d training baseline model",
+      "config": {
+        "data_dir": "tfrecords",
+        "datasets": [
+          "mpii_3d",
+          "h36m",
+          "total_cap"
+        ],
+        "joint_type": "cocoplus",
+        "init_custom_regressor": false
+      },
+      "eval_angles": false
+    },
+    {
+      "eval_date": "08052020-102709",
+      "file_name": "baseline_model_3d_new_h36m",
+      "description": "3d training baseline model with regenerated h36m",
+      "config": {
+        "data_dir": "tfrecords",
+        "datasets": [
+          "mpii_3d",
+          "h36m"
+        ],
+        "joint_type": "cocoplus",
+        "init_custom_regressor": false
+      },
+      "eval_angles": false
+    },
+    {
+      "eval_date": "08052020-102709",
+      "file_name": "baseline_model_3d_new_h36m_eval_total_cap",
+      "description": "3d training baseline model with regenerated h36m evaluated ",
+      "config": {
+        "data_dir": "tfrecords",
+        "datasets": [
+          "mpii_3d",
+          "h36m",
+          "total_cap"
+        ],
+        "joint_type": "cocoplus",
+        "init_custom_regressor": false
+      },
+      "eval_angles": false
+    },
+    {
+      "eval_date": "08052020-102709",
+      "file_name": "baseline_model_3d_new_h36m_angle",
+      "description": "3d training baseline model with regenerated h36m",
+      "config": {
+        "data_dir": "tfrecords_with_toes",
+        "datasets": [
+          "h36m",
+          "total_cap"
+        ],
+        "joint_type": "cocoplus",
+        "init_custom_regressor": true
+      },
+      "eval_angles": true
+    },
+    {
+      "eval_date": "22052020-165507",
+      "file_name": "total_cap_model_3d",
+      "description": "3d training with regenerated h36m and new total capture dataset",
+      "config": {
+        "data_dir": "tfrecords",
+        "datasets": [
+          "mpii_3d",
+          "h36m",
+          "total_cap"
+        ],
+        "joint_type": "cocoplus",
+        "init_custom_regressor": false
+      },
+      "eval_angles": false
+    },
+    {
+      "eval_date": "25052020-171905",
+      "file_name": "total_cap_model_2d",
+      "description": "2d training with regenerated h36m and new total capture dataset",
+      "config": {
+        "data_dir": "tfrecords",
+        "datasets": [
+          "mpii_3d",
+          "h36m",
+          "total_cap"
+        ],
+        "joint_type": "cocoplus",
+        "init_custom_regressor": false
+      },
+      "eval_angles": false
+    },
+    {
+      "eval_date": "19072020-155302",
+      "file_name": "toes_total_cap_model_3d",
+      "description": "3d training with toes and total capture",
+      "config": {
+        "data_dir": "tfrecords_with_toes",
+        "datasets": [
+          "h36m",
+          "total_cap"
+        ],
+        "joint_type": "custom",
+        "init_custom_regressor": false
+      },
+      "eval_angles": true
+    },
+    {
+      "eval_date": "26072020-191649",
+      "file_name": "toes_total_cap_model_2d",
+      "description": "2d training with toes and total capture",
+      "config": {
+        "data_dir": "tfrecords_with_toes",
+        "datasets": [
+          "h36m",
+          "total_cap"
+        ],
+        "joint_type": "custom",
+        "init_custom_regressor": false
+      },
+      "eval_angles": true
+    },
+    {
+      "eval_date": "05082020-170502",
+      "file_name": "toes_model_3d",
+      "description": "3d with toes but no total cap",
+      "config": {
+        "data_dir": "tfrecords_with_toes",
+        "datasets": [
+          "h36m"
+        ],
+        "joint_type": "custom",
+        "init_custom_regressor": false
+      },
+      "eval_angles": true
+    },
+    {
+      "eval_date": "01082020-085108",
+      "file_name": "toes_model_2d",
+      "description": "2d with toes but no total cap",
+      "config": {
+        "data_dir": "tfrecords_with_toes",
+        "datasets": [
+          "h36m"
+        ],
+        "joint_type": "custom",
+        "init_custom_regressor": false
+      },
+      "eval_angles": true
+    },
+    {
+      "eval_date": "22082020-213548",
+      "file_name": "baseline_model_3d_tool",
+      "description": "3d training baseline model for tool with generated shoulder keypoints",
+      "config": {
+        "data_dir": "tfrecords",
+        "datasets": [
+          "mpii_3d",
+          "h36m"
+        ],
+        "joint_type": "cocoplus",
+        "init_custom_regressor": false
+      },
+      "eval_angles": false
+    }
+  ]
+}

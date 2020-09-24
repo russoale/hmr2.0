@@ -29,10 +29,10 @@ using non-negative least squares (see 4.1 [SMPL2015](http://files.is.tue.mpg.de/
 ![regressor image](images/regressor_keypoint.png)
 
 
-#### Requirements
+## Requirements
 - Python > 3.6 
 
-#### Installation
+## Installation
 
 *I recommend using a virtual environment using virtualenvwrapper*
 
@@ -50,7 +50,7 @@ export WORKON_HOME=$HOME/.virtualenvs
 source /usr/local/bin/virtualenvwrapper.sh
 ```
 
-##### setup virtual environment
+#### setup virtual environment
 ```
 mkvirtualenv hmr2.0
 workon hmr2.0
@@ -63,17 +63,26 @@ pip install -r requirements.txt
 pip install -r keypoint_marker/requirements.txt
 ```
 
-##### run demo 
-1. download one of the pre trained models
+#### run demo 
+
+Download one of the pretrained models
 - [LSP pretrained](https://github.com/russoale/hmr2.0/releases/download/1.0/trained_lsp.zip)
 - [LSP+toes pretrained](https://github.com/russoale/hmr2.0/releases/download/1.0/trained_lsp_plus_toes.zip)
 
-2. create `logs` folder
+Create `logs` folder
 ```
-mkdir logs/lsp_toes # or logs/lsp
+# use lsp or lsp_toes
+mkdir -p logs/lsp && cd logs/lsp    
+curl -L -O https://github.com/russoale/hmr2.0/releases/download/1.0/trained_lsp.zip && unzip trained_lsp.zip
 ```
-3. unpack checkpoint files 
-4. run demo 
+
+If you chose `lsp_toes` then you need to link the regressors to the `models` directory 
+```
+cd models && ln -s ../keypoint_marker/regressors
+```
+If you used your own folder structure update paths in `src/main/config.py`
+
+Run demo 
 ```
 cd src/notebooks
 python trimesh_renderer.py

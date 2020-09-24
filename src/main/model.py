@@ -56,10 +56,11 @@ class ExceptionHandlingIterator:
 
 class Model:
 
-    def __init__(self):
+    def __init__(self, display_config=True):
         self.config = Config()
         self.config.save_config()
-        self.config.display()
+        if display_config:
+            self.config.display()
 
         self._build_model()
         self._setup_summary()
@@ -357,15 +358,21 @@ class Model:
     #  Test
     ############################################################
 
-    def test(self):
+    def test(self, return_kps=False):
         """Run evaluation of the model
         Specify LOG_DIR to point to the saved checkpoint directory
+
+        Args:
+            return_kps: set to return keypoints - default = False
         """
 
         if self.restore_check is None:
             raise RuntimeError('restore did not succeed, pleas check if you set config.LOG_DIR correctly')
 
-        self.restore_check.assert_existing_objects_matched().assert_nontrivial_match()
+        if self.config.INITIALIZE_CUSTOM_REGRESSOR:
+            self.restore_check.assert_nontrivial_match()
+        else:
+            self.restore_check.assert_existing_objects_matched().assert_nontrivial_match()
 
         # Place tensors on the CPU
         with tf.device('/CPU:0'):
@@ -375,12 +382,16 @@ class Model:
         start = time.time()
         print('Start of Testing')
 
-        mpjpe, mpjpe_aligned, sequences = [], [], []
+        mpjpe, mpjpe_aligned, sequences, kps3d_pred, kps3d_real = [], [], [], [], []
 
         total = int(self.config.NUM_TEST_SAMPLES / self.config.BATCH_SIZE)
         for image_data in tqdm(ds_test, total=total, position=0, desc='testing'):
             image, kp3d, sequence = image_data[0], image_data[1], image_data[2]
-            kp3d_mpjpe, kp3d_mpjpe_aligned = self._test_step(image, kp3d)
+            kp3d_mpjpe, kp3d_mpjpe_aligned, predict_kp3d, real_kp3d = self._test_step(image, kp3d, return_kps=return_kps)
+
+            if return_kps:
+                kps3d_pred.append(predict_kp3d)
+                kps3d_real.append(real_kp3d)
 
             mpjpe.append(kp3d_mpjpe)
             mpjpe_aligned.append(kp3d_mpjpe_aligned)
@@ -388,18 +399,25 @@ class Model:
 
         print('Time taken for testing {} sec\n'.format(time.time() - start))
 
-        def convert(tensor, num=None):
+        def convert(tensor, num=None, is_kp=False):
             if num is None:
                 num = self.config.NUM_KP3D
+            if is_kp:
+                return tf.squeeze(tf.reshape(tf.stack(tensor), [-1, num, 3]))
+
             return tf.squeeze(tf.reshape(tf.stack(tensor), [-1, num]))
 
         mpjpe, mpjpe_aligned, sequences = convert(mpjpe), convert(mpjpe_aligned), convert(sequences, 1)
         result_dict = {"kp3d_mpjpe": mpjpe, "kp3d_mpjpe_aligned": mpjpe_aligned, "seq": sequences, }
 
+        if return_kps:
+            kps3d_pred, kps3d_real = convert(kps3d_pred, is_kp=True), convert(kps3d_real, is_kp=True)
+            result_dict.update({'kps3d_pred': kps3d_pred, 'kps3d_real': kps3d_real})
+
         return result_dict
 
     @tf.function
-    def _test_step(self, image, kp3d):
+    def _test_step(self, image, kp3d, return_kps=False):
         tf.keras.backend.set_learning_phase(0)
 
         if len(tf.shape(image)) is not 4:
@@ -422,7 +440,10 @@ class Model:
         aligned_kp3d = batch_compute_similarity_transform(real_kp3d, predict_kp3d)
         kp3d_mpjpe_aligned = tf.norm(real_kp3d - aligned_kp3d, axis=2)
 
-        return kp3d_mpjpe, kp3d_mpjpe_aligned
+        if return_kps:
+            return kp3d_mpjpe, kp3d_mpjpe_aligned, predict_kp3d, real_kp3d
+
+        return kp3d_mpjpe, kp3d_mpjpe_aligned, None, None
 
     ############################################################
     #  Detect/Single Inference
@@ -434,7 +455,10 @@ class Model:
         if self.restore_check is None:
             raise RuntimeError('restore did not succeed, pleas check if you set config.LOG_DIR correctly')
 
-        self.restore_check.assert_existing_objects_matched().assert_nontrivial_match()
+        if self.config.INITIALIZE_CUSTOM_REGRESSOR:
+            self.restore_check.assert_nontrivial_match()
+        else:
+            self.restore_check.assert_existing_objects_matched().assert_nontrivial_match()
 
         if len(tf.shape(image)) is not 4:
             image = tf.expand_dims(image, 0)

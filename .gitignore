@@ -1,4 +1,7 @@
 /.idea/
 /.run/
 /logs/
+/src/eval/*.xlsx
 /**/__pycache__/**
+
+

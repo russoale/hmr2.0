@@ -38,8 +38,8 @@ class Config(object):
     # path to saved dataset in tf record format
     # folder names should be same as defined in DATASET config (see below):
     # e.g. DATASETS = ['coco', 'mpii_3d', 'h36m']
-    # DATA_DIR = os.path.join(ROOT_DATA_DIR, 'tfrecords')
-    DATA_DIR = os.path.join(ROOT_DATA_DIR, 'tfrecords_with_toes')
+    # ['tfrecords', 'tfrecords_with_toes']
+    DATA_DIR = os.path.join(ROOT_DATA_DIR, 'tfrecords')
 
     # path to saved smpl data in tf record format
     # folder names should be same as defined in SMPL_DATASETS config (see below):
@@ -47,6 +47,7 @@ class Config(object):
     SMPL_DATA_DIR = os.path.join(ROOT_DATA_DIR, 'tfrecords', 'smpl')
 
     # path to the neutral smpl model
+    # ['neutral_smpl_coco_regressor.pkl', 'neutral_smpl_coco_regressor_tool_shoulders.pkl']
     SMPL_MODEL_PATH = os.path.join(ROOT_PROJECT_DIR, 'models', 'neutral_smpl_coco_regressor.pkl')
 
     # path to mean theta h5 file
@@ -64,8 +65,8 @@ class Config(object):
     ITERATIONS = 3
 
     # define joint type returned by SMPL
-    # any of [cocoplus, lsp, custom]
-    JOINT_TYPE = 'custom'
+    # any of [cocoplus, lsp, custom, coco_custom]
+    JOINT_TYPE = 'cocoplus'
 
     # cocoplus: 19 keypoints
     # lsp:  14 keypoints
@@ -75,23 +76,25 @@ class Config(object):
         'cocoplus': 19,
         'custom': 21
     }
-    NUM_KP2D = DS_KP2D.get(JOINT_TYPE)
     DS_KP3D = {
         'lsp': 14,
         'cocoplus': 14,
         'custom': 16
     }
-    NUM_KP3D = DS_KP3D.get(JOINT_TYPE)
 
     # indices where custom regressors should be places in to joint regressor
     # this depends on how universal keypoints are definded in tfrecord_converter, e.g.:
     # toes left/right have been added accordingly to the scheme of lsp order.
-    # Therefore being places at index 0 (toes_r) and 7 (toes_l) as lsp is ordered
+    # Therefore being inserted at index 0 (toes_r) and 7 (toes_l) as lsp is ordered
     # from bottom to top of the body with right side of the body first and then left.
     CUSTOM_REGRESSOR_IDX = {
         0: 'regressor_toes_right.npy',
         7: 'regressor_toes_left.npy'
     }
+
+    # if you want to run inference or evaluation with a pretrained standard lsp or cocoplus model
+    # but still regress for the new keypoints set this to True
+    INITIALIZE_CUSTOM_REGRESSOR = False
 
     # number of epochs to train
     EPOCHS = 55
@@ -106,7 +109,7 @@ class Config(object):
     SEED = 42
 
     # list of datasets to use for training
-    DATASETS = ['lsp', 'lsp_ext', 'mpii', 'coco', 'mpii_3d', 'h36m', 'total_cap']
+    DATASETS = ['lsp', 'lsp_ext', 'mpii', 'coco', 'mpii_3d', 'h36m']  # , 'total_cap']
 
     # datasets to use for adversarial prior training
     SMPL_DATASETS = ['cmu', 'joint_lim']  # , 'h36m']
@@ -178,21 +181,24 @@ class Config(object):
         self.__initialized = True
 
         # number of training samples, use `test_count_all_samples` in test_dataset.py to determine
-        self.NUM_TRAINING_SAMPLES = self.count_samples_of(self.DATASETS, 'train')
+        self.NUM_TRAINING_SAMPLES = self.count_samples_of(self.DATASETS, self.DATA_DIR, 'train')
 
         # number of smpl training samples
-        self.NUM_TRAIN_SMPL_SAMPLES = self.count_samples_of(self.SMPL_DATASETS, 'train')
+        self.NUM_TRAIN_SMPL_SAMPLES = self.count_samples_of(self.SMPL_DATASETS, self.DATA_DIR, 'train')
 
         # number of validation samples, use `test_count_all_samples` in test_dataset.py to determine
         # For validation coco val set for 2d and for 3d subject 9 from h36m was used
         # (all sequences but only first camera perspective)
-        self.NUM_VALIDATION_SAMPLES = self.count_samples_of(self.DATASETS, 'val')
+        self.NUM_VALIDATION_SAMPLES = self.count_samples_of(self.DATASETS, self.DATA_DIR, 'val')
 
         # number of test samples, use `test_count_all_samples` in test_dataset.py to determine
-        self.NUM_TEST_SAMPLES = self.count_samples_of(self.DATASETS, 'test')
+        self.NUM_TEST_SAMPLES = self.count_samples_of(self.DATASETS, self.DATA_DIR, 'test')
+
+        self.NUM_KP2D = self.DS_KP2D.get(self.JOINT_TYPE)
+        self.NUM_KP3D = self.DS_KP3D.get(self.JOINT_TYPE)
 
     @staticmethod
-    def count_samples_of(datasets, split):
+    def count_samples_of(datasets, datadir, split):
         """Numbers need to be provided after tf record generation (see `inspect.ipynb`)
         Args:
             datasets: list of dataset names used for training
@@ -201,40 +207,57 @@ class Config(object):
             total_number: int, total number of training samples
         """
         train_samples_per_dataset = {
-            'lsp': 999,
-            'lsp_ext': 9896,
-            'mpii': 16125,
-            'coco': 98101,
-            # without toes
-            # 'mpii_3d': 166311,
-            # 'h36m': 311950,
-            # 'total_cap': 75060,
+            'tfrecords': {
+                'lsp': 999,
+                'lsp_ext': 9896,
+                'mpii': 16125,
+                'coco': 98101,
 
-            # with toes
-            'mpii_3d': 173126,
-            'h36m': 118955,
-            'total_cap': 81617,
+                'mpii_3d': 166311,
+                'h36m': 311950,
+                'total_cap': 75060,
 
-            # SMPL/MOSH:
-            'cmu': 3934266,
-            'joint_lim': 181967,
+                'cmu': 3934266,
+                'joint_lim': 181967,
+            },
+            'tfrecords_with_toes': {
+                'lsp': 999,
+                'lsp_ext': 9896,
+                'mpii': 16125,
+                'coco': 98101,
+
+                'mpii_3d': 173126,
+                'h36m': 118955,
+                'total_cap': 81617,
+
+                'cmu': 3934266,
+                'joint_lim': 181967,
+            }
         }
 
         val_samples_per_dataset = {
-            'lsp': 997,
-            'coco': 3984,
-            # 'h36m': 15883, # without toes
-            'h36m': 6482,
+            'tfrecords': {
+                'lsp': 997,
+                'coco': 3984,
+                'h36m': 6482,
+            },
+            'tfrecords_with_toes': {
+                'lsp': 997,
+                'coco': 3984,
+                'h36m': 15883,
+            }
         }
 
         test_samples_per_dataset = {
-            # without toes
-            # 'mpii_3d': 2874,
-            # 'h36m': 110128,
-            # 'total_cap': 73871,
-
-            'h36m': 110128,
-            'total_cap': 184401,
+            'tfrecords': {
+                'mpii_3d': 2874,
+                'h36m': 110128,
+                'total_cap': 73871,
+            },
+            'tfrecords_with_toes': {
+                'h36m': 110128,
+                'total_cap': 74273,
+            }
         }
 
         if split == 'train':
@@ -246,6 +269,11 @@ class Config(object):
         else:
             raise Exception('unknown split')
 
+        if 'src/tests/files' in datadir:
+            # return 0 for LocalConfig
+            return 0
+
+        samples = samples[os.path.basename(datadir)]
         return sum([samples[d] for d in datasets if d in samples.keys()])
 
     def save_config(self):
@@ -267,3 +295,6 @@ class Config(object):
             if not a.startswith("__") and not callable(getattr(self, a)):
                 print("{:30} {}".format(a, getattr(self, a)))
         print("\n")
+
+    def reset(self):
+        Config.__instance = None

@@ -112,6 +112,7 @@ class Qt5PygletWidget(QtOpenGL.QGLWidget):
         self.fov = fov
         self.z_near = float(z_near)
         self.z_far = float(z_far)
+        self.pixel_ratio = self.devicePixelRatio()
 
     def on_init(self):
         pass
@@ -178,7 +179,7 @@ class Qt5PygletWidget(QtOpenGL.QGLWidget):
         """
         Call appropriate functions given mouse key presses.
         """
-        x, y = event.x(), event.y()
+        x, y = event.x() * self.pixel_ratio, event.y() * self.pixel_ratio
         buttons = event.buttons()
         modifiers = QApplication.keyboardModifiers()
         self.on_mouse_press(x, y, buttons, modifiers)
@@ -188,7 +189,7 @@ class Qt5PygletWidget(QtOpenGL.QGLWidget):
         """
         Call appropriate function if mouse is moving
         """
-        x, y = event.x(), event.y()
+        x, y = event.x() * self.pixel_ratio, event.y() * self.pixel_ratio
         self.on_mouse_drag(x, y)
         self.updateGL()
 
@@ -196,7 +197,7 @@ class Qt5PygletWidget(QtOpenGL.QGLWidget):
         """
         Call appropriate function if mouse double click
         """
-        x, y = event.x(), event.y()
+        x, y = event.x() * self.pixel_ratio, event.y() * self.pixel_ratio
         self.on_mouse_double_click(x, y)
         self.updateGL()
 
@@ -204,6 +205,6 @@ class Qt5PygletWidget(QtOpenGL.QGLWidget):
         """
         Call appropriate function if mouse is scrolling
         """
-        dy = event.pixelDelta().y() / 5.
+        dy = event.pixelDelta().y() * self.pixel_ratio / 5.
         self.on_mouse_scrolling(dy)
         self.updateGL()

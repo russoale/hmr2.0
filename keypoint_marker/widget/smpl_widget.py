@@ -31,7 +31,7 @@ class SmplWidget(Qt5PygletWidget):
         super(SmplWidget, self).__init__(parent)
 
     # noinspection PyAttributeOutsideInit
-    def initialize_scene(self, scene, regressor, custom_regressor=None, smooth=True, profile=False):
+    def initialize_scene(self, scene, smpl_loader, custom_regressor=None, smooth=True, profile=False):
         lights = {}
         for i, light in enumerate(scene.lights[:7]):
             matrix = scene.graph.get(light.name)[0]
@@ -48,7 +48,7 @@ class SmplWidget(Qt5PygletWidget):
                                z_far=scene.camera.z_far)
 
         self._scene = scene
-        self._regressor = regressor
+        self._smpl_loader = smpl_loader
         self._custom_regressor = custom_regressor
         self._smooth = smooth
 
@@ -304,18 +304,21 @@ class SmplWidget(Qt5PygletWidget):
     def _toggle_joints(self):
         mesh = self._scene.geometry['geometry_0']
 
+        loader = self._smpl_loader
+        regressor = loader.coco_regressor if loader.coco_regressor is not None else loader.j_regressor
+
         self.view['show_joints'] = not self.view['show_joints']
         if self.view['show_joints']:
             colors = np.array([[200, 200, 200, 255]])
-            colors = np.tile(colors, self._regressor.shape[1]).reshape(-1, 4)
-            colors = self._add_joints(colors, mesh, self._regressor)
+            colors = np.tile(colors, regressor.shape[1]).reshape(-1, 4)
+            colors = self._add_joints(colors, mesh, regressor)
 
             if self._custom_regressor is not None:
                 colors = self._add_joints(colors, mesh, self._custom_regressor, geom_name='cust_reg_joints')
 
         else:
             colors = np.array([[200, 200, 200, 255]])
-            colors = np.tile(colors, self._regressor.shape[1]).reshape(-1, 4)
+            colors = np.tile(colors, regressor.shape[1]).reshape(-1, 4)
             self._scene.delete_geometry('reg_joints')
             if self._custom_regressor is not None:
                 self._scene.delete_geometry('cust_reg_joints')
