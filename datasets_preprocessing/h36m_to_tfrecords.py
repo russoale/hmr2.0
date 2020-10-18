@@ -1,6 +1,6 @@
 import csv
 from os import listdir
-from os.path import join
+from os.path import join, exists
 from time import time
 
 import numpy as np
@@ -73,6 +73,9 @@ class H36MConverter(TFRecordConverter):
                         data[f] = kp3d[:num_points]
 
                     for cam, info in cam_infos.items():
+                        if not exists(join(self.data_dir, 'S%d' % sub_id, 'imageFrames', seq + info.suffix)):
+                            continue
+
                         kp3d = np.add(np.tensordot(data, info.R, axes=(2, 1)).reshape(shape), info.T)
                         kp2d = kp3d[:, :, :2] * info.f / np.expand_dims(kp3d[:, :, 2], -1) + info.o
 

@@ -1,0 +1,13 @@
+decorator==4.4.2
+networkx==2.5
+numpy==1.18.1
+opencv-python==4.1.2.30
+pyglet==1.5.7
+PyQt5==5.15.0
+PyQt5-sip==12.8.1
+PySide2==5.15.0
+Rtree==0.9.4
+scipy==1.4.1
+Shapely==1.7.1
+shiboken2==5.15.0
+trimesh==3.8.11

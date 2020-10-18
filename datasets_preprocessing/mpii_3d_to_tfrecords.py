@@ -9,12 +9,15 @@ from converter.tfrecord_converter import TFRecordConverter, DataSetConfig, DataS
 class Mpii3dConverter(TFRecordConverter):
 
     def __init__(self):
-        # Only use H3.6M annotated joints instead 28 mpii_3d
-        # extended with toes
-        self.mpii_3d_ids = np.array([8, 6, 15, 16, 17, 10, 11, 12, 24, 25, 26, 19, 20, 21, 5, 4, 7, 23, 28]) - 1
+        # when using toes
+        # self.mpii_3d_ids = np.array([8, 6, 15, 16, 17, 10, 11, 12, 24, 25, 26, 19, 20, 21, 5, 4, 7, 23, 28]) - 1
+        # self.mpii_3d_order = ['brain', 'neck', 'shoulder_r', 'elbow_r', 'wrist_r', 'shoulder_l', 'elbow_l', 'wrist_l',
+        #                       'hip_r', 'knee_r', 'ankle_r', 'hip_l', 'knee_l', 'ankle_l', 'pelvis', 'spine', 'head',
+        #                       'toes_l', 'toes_r']
+
+        self.mpii_3d_ids = np.array([8, 6, 15, 16, 17, 10, 11, 12, 24, 25, 26, 19, 20, 21, 5, 4, 7]) - 1
         self.mpii_3d_order = ['brain', 'neck', 'shoulder_r', 'elbow_r', 'wrist_r', 'shoulder_l', 'elbow_l', 'wrist_l',
-                              'hip_r', 'knee_r', 'ankle_r', 'hip_l', 'knee_l', 'ankle_l', 'pelvis', 'spine', 'head',
-                              'toes_l', 'toes_r']
+                              'hip_r', 'knee_r', 'ankle_r', 'hip_l', 'knee_l', 'ankle_l', 'pelvis', 'spine', 'head']
 
         self.split_dict = {
             'train': {
@@ -23,11 +26,11 @@ class Mpii3dConverter(TFRecordConverter):
                 'cam_ids': [0, 1, 2, 4, 5, 6, 7, 8]
             },
             # test set does not contain toes annotation
-            # 'test': {
-            #     'sub_ids': [1, 2, 3, 4, 5, 6],
-            #     'seq_ids': None,
-            #     'cam_ids': None
-            # }
+            'test': {
+                'sub_ids': [1, 2, 3, 4, 5, 6],
+                'seq_ids': None,
+                'cam_ids': None
+            }
         }
         super().__init__()
 

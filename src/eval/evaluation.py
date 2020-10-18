@@ -186,13 +186,14 @@ def eval_angles(datasets, sequences, kps3d_pred, kps3d_real):
     frames = []
     index = ['Mean', 'Median', 'Standard Deviation', 'Min', 'Max', '25%', '50%', '75%', 'Norm', 'Small Angles 15%',
              'Big Angles 85%']
-    for angle_name, angles in angles_indices.items():
-        result = {}
-        for key, kp3d in eval_angle_dict.items():
-            kp3d = np.asarray(kp3d, dtype=np.float32)
-            kp3d_pred = kp3d[:, 0, :]
-            kp3d_real = kp3d[:, 1, :]
 
+    for key, kp3d in eval_angle_dict.items():
+        kp3d = np.asarray(kp3d, dtype=np.float32)
+        kp3d_pred = kp3d[:, 0, :]
+        kp3d_real = kp3d[:, 1, :]
+
+        result = {}
+        for angle_name, angles in angles_indices.items():
             data = np.ndarray(shape=(kp3d.shape[0], 3), dtype=float)
             for i, kp_pred, kp_real in zip(range(kp3d.shape[0]), kp3d_pred, kp3d_real):
                 pred = calc_angle(kp_pred[angles[0]], kp_pred[angles[1]], kp_pred[angles[2]])
@@ -209,14 +210,14 @@ def eval_angles(datasets, sequences, kps3d_pred, kps3d_real):
             big_angles = data[np.where(real_data > np.percentile(real_data, 85))[0], 2]
             norm_angles = np.concatenate([small_angles, big_angles], -1)
 
-            result['pred' + angle_name] = [np.mean(pred_data), np.median(pred_data), np.std(pred_data), pred_data.min(),
-                                           pred_data.max(), np.percentile(pred_data, 25), np.percentile(pred_data, 50),
-                                           np.percentile(pred_data, 75), np.mean(norm_angles), np.mean(small_angles),
-                                           np.mean(big_angles)]
+            result[key + '_pred_' + angle_name] = [np.mean(pred_data), np.median(pred_data), np.std(pred_data),
+                                                   pred_data.min(), pred_data.max(), np.percentile(pred_data, 25),
+                                                   np.percentile(pred_data, 50), np.percentile(pred_data, 75),
+                                                   np.mean(norm_angles), np.mean(small_angles), np.mean(big_angles)]
 
-            result['real' + angle_name] = [np.mean(real_data), np.median(real_data), np.std(real_data), real_data.min(),
-                                           real_data.max(), np.percentile(real_data, 25), np.percentile(real_data, 50),
-                                           np.percentile(real_data, 75), 0, 0, 0]
+            result[key + '_real_' + angle_name] = [np.mean(real_data), np.median(real_data), np.std(real_data),
+                                                   real_data.min(), real_data.max(), np.percentile(real_data, 25),
+                                                   np.percentile(real_data, 50), np.percentile(real_data, 75), 0, 0, 0]
 
         frames.append(pd.DataFrame(result, index=index, columns=list(result.keys())))
 
@@ -225,50 +226,66 @@ def eval_angles(datasets, sequences, kps3d_pred, kps3d_real):
 
 
 if __name__ == '__main__':
-    eval_config = abspath('eval_config.json')
 
-    with open(eval_config) as f:
+    with open(abspath('eval_config.json')) as f:
         eval_config = json.load(f)
 
-    for run in eval_config['runs']:
-        class EvalConfig(Config):
-            ENCODER_ONLY = True
-            LOG_DIR = join('/', 'data', 'ssd1', 'russales', 'logs', run['eval_date'])
-            DATA_DIR = join('/', 'data', 'ssd1', 'russales', run['config']['data_dir'])
-            DATASETS = run['config']['datasets']
-            JOINT_TYPE = run['config']['joint_type']
-            INITIALIZE_CUSTOM_REGRESSOR = run['config']['init_custom_regressor']
+    for setting, models in eval_config.items():
+        for model in models:
+            file_name = '{} - {}'.format(model['file_name'], setting)
+            description = model['description']
+            evaluate_angles = model['evaluate_angles']
+            config = model['config']
 
 
-        config = EvalConfig()
+            class EvalConfig(Config):
+                ENCODER_ONLY = True
+                LOG_DIR = join('/', 'data', 'ssd1', 'russales', 'logs', setting, config['model'])
+                DATA_DIR = join('/', 'data', 'ssd1', 'russales', config['data_dir'])
+                DATASETS = config['datasets']
+                JOINT_TYPE = config['joint_type']
+                INITIALIZE_CUSTOM_REGRESSOR = config['init_custom_regressor']
 
-        model = Model(display_config=False)
 
-        if config.JOINT_TYPE == 'cocoplus' and config.INITIALIZE_CUSTOM_REGRESSOR:
-            config.NUM_KP2D = 21
-            config.NUM_KP3D = 16
+            config = EvalConfig()
+            model = Model(display_config=False)
+            if config.JOINT_TYPE == 'cocoplus' and config.INITIALIZE_CUSTOM_REGRESSOR:
+                config.NUM_KP2D = 21
+                config.NUM_KP3D = 16
 
-        result = model.test(return_kps=run['eval_angles'])
-        all_kp3d_mpjpe = result['kp3d_mpjpe'].numpy()
-        all_kp3d_mpjpe_aligned = result['kp3d_mpjpe_aligned'].numpy()
-        sequences = result['seq'].numpy()
+            result = model.test(return_kps=evaluate_angles)
+            all_kp3d_mpjpe = result['kp3d_mpjpe'].numpy()
+            all_kp3d_mpjpe_aligned = result['kp3d_mpjpe_aligned'].numpy()
+            sequences = result['seq'].numpy()
 
-        df_seq = eval_per_sequence(sequences, all_kp3d_mpjpe, all_kp3d_mpjpe_aligned)
-        df_joint = eval_per_joint(config, sequences, all_kp3d_mpjpe, all_kp3d_mpjpe_aligned)
-        df_dataset = eval_per_dataset(config.DATASETS, sequences, all_kp3d_mpjpe_aligned, all_kp3d_mpjpe)
+            df_seq = eval_per_sequence(sequences, all_kp3d_mpjpe, all_kp3d_mpjpe_aligned)
+            df_joint = eval_per_joint(config, sequences, all_kp3d_mpjpe, all_kp3d_mpjpe_aligned)
+            df_dataset = eval_per_dataset(config.DATASETS, sequences, all_kp3d_mpjpe_aligned, all_kp3d_mpjpe)
 
-        if run['eval_angles']:
-            kps3d_real = result['kps3d_real'].numpy()
-            kps3d_pred = result['kps3d_pred'].numpy()
-            df_angles = eval_angles(config.DATASETS, sequences, kps3d_pred, kps3d_real)
+            if evaluate_angles:
+                kps3d_real = result['kps3d_real'].numpy()
+                kps3d_pred = result['kps3d_pred'].numpy()
+                df_angles = eval_angles(config.DATASETS, sequences, kps3d_pred, kps3d_real)
 
-        with pd.ExcelWriter('{}.xlsx'.format(run['file_name'])) as writer:
-            print('saving Evaluation Excel to {}.xlsx'.format(run['file_name']))
-            df_seq.to_excel(writer, sheet_name='Sequences')
-            df_joint.to_excel(writer, sheet_name='Joints')
-            df_dataset.to_excel(writer, sheet_name='Datasets Overall')
-            if run['eval_angles']:
-                df_angles.to_excel(writer, sheet_name='Angles')
+            with pd.ExcelWriter('reports/{}/{}.xlsx'.format(setting, file_name), engine="xlsxwriter") as writer:
+                print('saving Evaluation Excel to {}.xlsx'.format(file_name))
+                df_seq.to_excel(writer, sheet_name='Sequences')
+                df_joint.to_excel(writer, sheet_name='Joints')
+                df_dataset.to_excel(writer, sheet_name='Datasets Overall')
+                if evaluate_angles:
+                    df_angles.to_excel(writer, sheet_name='Angles')
 
-        config.reset()
-        print('done\n')
+                config_dict = config.read_config()
+                if config_dict is None:
+                    config_dict = {a: getattr(config, a) for a in dir(config)
+                                   if not a.startswith("_") and not callable(getattr(config, a))}
+                worksheet = writer.book.add_worksheet('Model Description')
+                worksheet.write(0, 0, description)
+
+                worksheet.write(2, 0, 'Config')
+                for i, (k, v) in enumerate(config_dict.items(), 3):
+                    worksheet.write(i, 0, k)
+                    worksheet.write(i, 1, str(v))
+
+            config.reset()
+            print('done\n')

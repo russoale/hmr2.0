@@ -1,7 +1,8 @@
 /.idea/
 /.run/
 /logs/
+/models/regressors/
 /src/eval/*.xlsx
+/src/eval/reports/
+/src/eval/old reports/
 /**/__pycache__/**
-
-

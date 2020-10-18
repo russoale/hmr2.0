@@ -20,10 +20,10 @@ class Config(object):
 
     # ------Directory settings:------
     #
-    # root directory
+    # root project directory
     ROOT_PROJECT_DIR = os.path.abspath(os.path.join(__file__, '..', '..', '..'))
 
-    # root directory
+    # root data directory
     ROOT_DATA_DIR = os.path.join('/', 'data', 'ssd1', 'russales')
 
     # path to save training models to
@@ -34,11 +34,12 @@ class Config(object):
     # per default last saved checkpoint will be restored
     # subclass config to override, see example in evaluate.ipynb
     RESTORE_PATH = None
+    RESTORE_EPOCH = None
 
     # path to saved dataset in tf record format
     # folder names should be same as defined in DATASET config (see below):
     # e.g. DATASETS = ['coco', 'mpii_3d', 'h36m']
-    # ['tfrecords', 'tfrecords_with_toes']
+    # ['tfrecords', 'tfrecords_with_toes', 'tfrecords_balanced_3d]
     DATA_DIR = os.path.join(ROOT_DATA_DIR, 'tfrecords')
 
     # path to saved smpl data in tf record format
@@ -109,7 +110,7 @@ class Config(object):
     SEED = 42
 
     # list of datasets to use for training
-    DATASETS = ['lsp', 'lsp_ext', 'mpii', 'coco', 'mpii_3d', 'h36m']  # , 'total_cap']
+    DATASETS = ['lsp', 'lsp_ext', 'mpii', 'coco', 'mpii_3d', 'h36m', 'total_cap']
 
     # datasets to use for adversarial prior training
     SMPL_DATASETS = ['cmu', 'joint_lim']  # , 'h36m']
@@ -118,7 +119,7 @@ class Config(object):
     ENCODER_ONLY = False
 
     # set True to use 3D labels
-    USE_3D = False
+    USE_3D = True
 
     # ------Hyper parameters:------
     #
@@ -232,6 +233,19 @@ class Config(object):
 
                 'cmu': 3934266,
                 'joint_lim': 181967,
+            },
+            'tfrecords_balanced_3d': {
+                'lsp': 999,
+                'lsp_ext': 9896,
+                'mpii': 16125,
+                'coco': 98101,
+
+                'mpii_3d': 166031,
+                'h36m': 99552,
+                'total_cap': 75060,
+
+                'cmu': 3934266,
+                'joint_lim': 181967,
             }
         }
 
@@ -245,6 +259,11 @@ class Config(object):
                 'lsp': 997,
                 'coco': 3984,
                 'h36m': 15883,
+            },
+            'tfrecords_balanced_3d': {
+                'lsp': 997,
+                'coco': 3984,
+                'h36m': 6120,
             }
         }
 
@@ -255,6 +274,10 @@ class Config(object):
                 'total_cap': 73871,
             },
             'tfrecords_with_toes': {
+                'h36m': 110128,
+                'total_cap': 74273,
+            },
+            'tfrecords_balanced_3d': {
                 'h36m': 110128,
                 'total_cap': 74273,
             }
@@ -269,7 +292,7 @@ class Config(object):
         else:
             raise Exception('unknown split')
 
-        if 'src/tests/files' in datadir:
+        if os.path.basename(datadir) not in samples:
             # return 0 for LocalConfig
             return 0
 
@@ -295,6 +318,13 @@ class Config(object):
             if not a.startswith("__") and not callable(getattr(self, a)):
                 print("{:30} {}".format(a, getattr(self, a)))
         print("\n")
+
+    def read_config(self):
+        config_path = os.path.join(self.LOG_DIR, "config.json")
+        if os.path.exists(config_path):
+            return json.load(open(config_path))
+        else:
+            return None
 
     def reset(self):
         Config.__instance = None

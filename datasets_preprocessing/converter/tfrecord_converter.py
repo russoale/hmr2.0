@@ -14,7 +14,8 @@ from converter.helpers import check_np_array, check_type, int64_feature, float_f
 
 
 class TFRecordConverterConfig:
-    def __init__(self, num_kp2d=21, num_kp3d=16, margin=150, min_vis=6, min_height=60, min_3d_mov=.2, max_scale=150.):
+    # if generating datasets for toes set: num_kp2d=21, num_kp3d=16
+    def __init__(self, num_kp2d=19, num_kp3d=14, margin=150, min_vis=6, min_height=60, min_3d_mov=.2, max_scale=150.):
         self.num_kp2d = num_kp2d
         self.num_kp3d = num_kp3d
         self.margin = margin
@@ -344,8 +345,14 @@ class DataSetConfig:
         # for custom regressors add the corresponding keypoints to universal order
         # this will force all datasets to add the given keypoint if available else
         # will pad it with [0, 0] and visibility 0
-        self.universal_order = ['toes_r', 'ankle_r', 'knee_r', 'hip_r', 'hip_l', 'knee_l', 'ankle_l', 'toes_l',
-                                'wrist_r', 'elbow_r', 'shoulder_r', 'shoulder_l', 'elbow_l', 'wrist_l', 'neck', 'brain']
+        """
+        when generating toes use following universal order:
+         ['toes_r', 'ankle_r', 'knee_r', 'hip_r', 'hip_l', 'knee_l', 'ankle_l', 'toes_l',
+            'wrist_r', 'elbow_r', 'shoulder_r', 'shoulder_l', 'elbow_l', 'wrist_l', 'neck', 'brain']
+        """
+
+        self.universal_order = ['ankle_r', 'knee_r', 'hip_r', 'hip_l', 'knee_l', 'ankle_l', 'wrist_r', 'elbow_r',
+                                'shoulder_r', 'shoulder_l', 'elbow_l', 'wrist_l', 'neck', 'brain']
 
         default_face_and_shoulder = ['shoulder_l', 'shoulder_r', 'neck', 'brain']
         if face_and_shoulder is not None:

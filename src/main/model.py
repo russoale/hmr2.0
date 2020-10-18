@@ -99,6 +99,7 @@ class Model:
         self.checkpoint_manager = tf.train.CheckpointManager(checkpoint, self.config.LOG_DIR, max_to_keep=5)
 
         # if a checkpoint exists, restore the latest checkpoint.
+        self.restore_check = None
         if self.checkpoint_manager.latest_checkpoint:
             restore_path = self.config.RESTORE_PATH
             if restore_path is None:
@@ -139,7 +140,11 @@ class Model:
             ds_smpl = dataset.get_smpl()
             ds_val = dataset.get_val()
 
-        for epoch in range(1, self.config.EPOCHS + 1):
+        start = 1
+        if self.config.RESTORE_EPOCH:
+            start = self.config.RESTORE_EPOCH
+
+        for epoch in range(start, self.config.EPOCHS + 1):
 
             start = time.time()
             print('Start of Epoch {}'.format(epoch))

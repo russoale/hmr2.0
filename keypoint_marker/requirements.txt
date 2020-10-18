@@ -1,6 +1,0 @@
-pyglet==1.5.7
-PyQt5==5.15.0
-PySide2==5.15.0
-trimesh
-networkx
-rtree
