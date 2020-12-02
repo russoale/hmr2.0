@@ -425,7 +425,7 @@ class Model:
     def _test_step(self, image, kp3d, return_kps=False):
         tf.keras.backend.set_learning_phase(0)
 
-        if len(tf.shape(image)) is not 4:
+        if len(tf.shape(image)) != 4:
             image = tf.expand_dims(image, 0)
             kp3d = tf.expand_dims(kp3d, 0)
 
@@ -465,7 +465,7 @@ class Model:
         else:
             self.restore_check.assert_existing_objects_matched().assert_nontrivial_match()
 
-        if len(tf.shape(image)) is not 4:
+        if len(tf.shape(image)) != 4:
             image = tf.expand_dims(image, 0)
 
         result = self.generator(image, training=False)

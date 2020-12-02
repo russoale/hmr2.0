@@ -135,7 +135,7 @@ class TFRecordConverter(abc.ABC):
         print('filter data...')
 
         for d in self.__data_set_splits:
-            if d.config.has_3d and d.config.name is not 'test':
+            if d.config.has_3d and d.config.name != 'test':
                 use_these = self._filter_3d_frames(d.kps_3d)
                 d.image_paths = d.image_paths[use_these]
                 d.kps_2d = d.kps_2d[use_these]
