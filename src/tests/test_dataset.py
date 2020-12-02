@@ -1,6 +1,5 @@
-import sys
-
 import os
+import sys
 
 # to make run from console for module import
 sys.path.append(os.path.abspath('..'))
@@ -24,35 +23,31 @@ class TestDataset(tf.test.TestCase):
             image = ((batch[0].numpy()[0, :, :, :] + 1) / 2 * 255).astype(np.int32)
             output = np.sum(image)
             expected = np.array(6991299, dtype=np.int32)
-            self.assertAllCloseAccordingToType(expected, output)  # this can sometimes fail with output=66
-            self.assertEqual(config.BATCH_SIZE, batch[0].shape[0])
-            self.assertEqual(config.ENCODER_INPUT_SHAPE, batch[0].shape[1:])
+            self.assertAllCloseAccordingToType(expected, output)  # this is flaky due to jitter of train dataset
+            self.assertEqual(config.ENCODER_INPUT_SHAPE, image.shape)
 
             kp2d = ((batch[1].numpy()[0, :, :2] + 1) / 2 * image.shape[:2]).astype(np.int32)
             output = np.sum(kp2d)
             expected = np.array(3818, dtype=np.int32)
             self.assertAllCloseAccordingToType(expected, output)
-            self.assertEqual((config.BATCH_SIZE, config.NUM_KP2D, 3), batch[1].shape)
+            self.assertEqual((config.NUM_KP2D, 2), kp2d.shape)
 
             vis = batch[1].numpy()[0, :, 2].astype(np.int32)
             output = np.sum(vis)
             expected = np.array(17, dtype=np.int32)
             self.assertAllCloseAccordingToType(expected, output)
+            self.assertEqual((config.NUM_KP2D,), vis.shape)
 
             kp3d = batch[2].numpy()[0, :, :]
             output = np.sum(kp3d)
             expected = np.array(4.11272e-06, dtype=np.float32)
             self.assertAllCloseAccordingToType(expected, output)
-            self.assertEqual((config.BATCH_SIZE, config.NUM_KP3D, 3), batch[2].shape)
+            self.assertEqual((config.NUM_KP3D, 3), kp3d.shape)
 
             # check if has3d flag is included in correct shape
             has3d = batch[3].numpy()[0]
             self.assertEqual(tf.constant(1, tf.int64), has3d)
             self.assertEqual((config.BATCH_SIZE,), batch[3].shape)
-
-            # show image to check
-            # from converter import helpers
-            # helpers.show_image(image, kp2d, vis)
 
     def test_dataset_val(self):
         config = LocalConfig()
@@ -86,10 +81,6 @@ class TestDataset(tf.test.TestCase):
             has3d = batch[3].numpy()[0]
             self.assertEqual(tf.constant(1, tf.int64), has3d)
             self.assertEqual((config.BATCH_SIZE,), batch[3].shape)
-
-            # show image to check
-            # from converter import helpers
-            # helpers.show_image(image, kp2d, vis)
 
     def test_dataset_test(self):
         config = LocalConfig()

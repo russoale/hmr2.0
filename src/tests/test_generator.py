@@ -26,7 +26,7 @@ class TestGenerator(tf.test.TestCase):
         generator = Generator()
         outputs = generator.resnet50V2(inputs, training=True)
         mean = tf.reduce_mean(outputs)
-        expected = np.array(0.17076212, dtype=np.float32)
+        expected = np.array(0.1707771569, dtype=np.float32)
 
         self.assertAllCloseAccordingToType(expected, mean)
         self.assertEqual(outputs.shape, (self.batch_size, 2048))
