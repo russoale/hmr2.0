@@ -73,7 +73,7 @@ class SmplTFRecordConverter(abc.ABC):
         num_record = 0
         if not (len(listdir(self.output_dir)) == 0):
             import re
-            num_record = int(max([re.findall("\d+", f)[0] for f in listdir(self.output_dir)])) + 1
+            num_record = int(max([re.findall(r"\d+", f)[0] for f in listdir(self.output_dir)])) + 1
 
         record_name = path.join(self.output_dir, '%03d_{}.tfrecord'.format(config.name))
         tf_record_name = record_name % num_record
@@ -85,7 +85,7 @@ class SmplTFRecordConverter(abc.ABC):
 
     @abc.abstractmethod
     def prepare_data(self):
-        raise NotImplemented('prepare_data method not yet implemented')
+        raise NotImplementedError('prepare_data method not yet implemented')
 
     @property
     def smpl_data_set_splits(self):
@@ -94,10 +94,10 @@ class SmplTFRecordConverter(abc.ABC):
     @smpl_data_set_splits.setter
     def smpl_data_set_splits(self, value):
         if not isinstance(value, list) and value == []:
-            raise Exception('smpl data set splits should be of type List and not empty!')
+            raise ValueError('smpl data set splits should be of type List and not empty!')
 
         if any(not isinstance(x, SmplDataSetSplit) for x in value):
-            raise Exception('smpl data set splits must be a list of type DataSetSplits!')
+            raise ValueError('smpl data set splits must be a list of type DataSetSplits!')
 
         self.__smpl_data_set_splits = value
 

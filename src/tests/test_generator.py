@@ -11,7 +11,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 import numpy as np
 import tensorflow as tf
 
-from main.generator import Generator, Regressor, Config
+from main.generator import Generator, Regressor
 from main.local import LocalConfig
 
 

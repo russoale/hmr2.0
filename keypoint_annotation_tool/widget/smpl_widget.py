@@ -14,7 +14,6 @@ from pyglet import gl
 
 import trimesh.transformations as tf
 import trimesh.util as tu
-import trimesh.visual as vis
 
 from trimesh.rendering import convert_to_vertexlist
 from trimesh.viewer.trackball import Trackball

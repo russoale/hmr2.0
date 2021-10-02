@@ -2,8 +2,8 @@ matplotlib
 numpy
 scipy
 opencv-python
-tensorflow
-# tensorflow-gpu
+tensorflow>=2.6.0
+# tensorflow-gpu>=2.6.0
 tqdm
 
 ## uncomment the following dependencies for generating tfrecords

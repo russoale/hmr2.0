@@ -64,10 +64,11 @@ class SmplLoader:
 
         rest_shape_h = np.vstack((v_posed.T, np.ones((1, v_posed.shape[0]))))
 
-        verts = (joints[:, 0, :] * rest_shape_h[0, :].reshape((1, -1)) +
-                 joints[:, 1, :] * rest_shape_h[1, :].reshape((1, -1)) +
-                 joints[:, 2, :] * rest_shape_h[2, :].reshape((1, -1)) +
-                 joints[:, 3, :] * rest_shape_h[3, :].reshape((1, -1))).T
+        verts = (joints[:, 0, :] * rest_shape_h[0, :].reshape((1, -1))
+                 + joints[:, 1, :] * rest_shape_h[1, :].reshape((1, -1))
+                 + joints[:, 2, :] * rest_shape_h[2, :].reshape((1, -1))
+                 + joints[:, 3, :] * rest_shape_h[3, :].reshape((1, -1))
+                 ).T
 
         verts = verts[:, :3] + trans
         return verts

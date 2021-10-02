@@ -1,13 +1,13 @@
-pandas==1.0.3
-XlsxWriter==1.3.7
+pandas
+XlsxWriter
 
 # no need to install following if using same environment as demo
-matplotlib==3.1.2
-numpy==1.18.1
-scipy==1.4.1
-opencv-python==4.1.2.30
-# tensorflow==2.1.2
-tensorflow-gpu==2.1.2
+matplotlib
+numpy
+scipy
+opencv-python
+tensorflow>=2.6.0
+# tensorflow-gpu>=2.6.0
 tqdm
 
 

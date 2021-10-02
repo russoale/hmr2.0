@@ -104,7 +104,7 @@ class Smpl(layers.Layer):
         v_joints = self.compute_joints(v_shaped, self.smpl_joint_regressor)
 
         # 3. Add pose blend shapes
-        # [batch x 24 x 3 x 3] 
+        # [batch x 24 x 3 x 3]
         rotations = tf.reshape(batch_rodrigues(_pose), [_batch_size, self.config.NUM_JOINTS_GLOBAL, 3, 3])
         # Ignore global rotation [batch x 23 x 3 x 3] -> [batch, 207]
         pose_feature = tf.reshape(rotations[:, 1:, :, :] - self.identity, [_batch_size, -1])

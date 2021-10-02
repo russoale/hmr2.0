@@ -18,8 +18,8 @@ def check_np_array(name, value, shape, dtype=None):
     is_dtype = value.dtype == dtype if dtype is not None else True
     has_shape = all([value.shape[i] == dim for i, dim in enumerate(shape)])
     if not (is_nd and is_dtype and has_shape):
-        raise ValueError('{} should be a ndarray of dtype {} with shape {},'.format(name, dtype, shape) +
-                         'but got {} of type: {} with shape: {}'.format(type(value), value.dtype, value.shape))
+        raise ValueError('{} should be a ndarray of dtype {} with shape {},'.format(name, dtype, shape)
+                         + 'but got {} of type: {} with shape: {}'.format(type(value), value.dtype, value.shape))
     return value
 
 

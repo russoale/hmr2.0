@@ -1,5 +1,8 @@
 # Domain Analysis of End-to-end Recovery of Human Shape and Pose
 
+[![Python package](https://github.com/russoale/hmr2.0/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/russoale/hmr2.0/actions/workflows/build-and-test.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 This repository is part of the master thesis with the title: "Analysis of Domain Adaptability for 3D Human Pose Estimation with Explicit 
 Body Shape Models" based on [End-to-end Recovery of Human Shape and Pose](https://akanazawa.github.io/hmr).
 

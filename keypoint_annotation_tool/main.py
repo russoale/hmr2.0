@@ -28,9 +28,9 @@ models = {
 }
 
 """ python snippet to modify original pkl file
-    removes chumpy and scipy dependency 
+    removes chumpy and scipy dependency
     converting csc_matrix to numpy array only increases file size about 2MB
-    
+
 from scipy.sparse import csc_matrix
 from chumpy import Ch
 new_dict = {}

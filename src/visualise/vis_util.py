@@ -345,7 +345,7 @@ def display_weight_stats(_model):
     for layer in layers:
         weight_values = layer.get_weights()  # list of Numpy arrays
 
-        # if not set to 
+        # if not set to
         layer.trainable = True
         weight_tensors = layer.weights  # list of TF tensors
 

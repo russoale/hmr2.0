@@ -18,7 +18,7 @@ try:
         from tqdm import tqdm_notebook as tqdm
     else:
         from tqdm import tqdm
-except:
+except:  # noqa E722
     from tqdm import tqdm
 
 from main.config import Config
@@ -201,11 +201,11 @@ class Model:
                 kp3d_loss = v1_loss.mean_squared_error(kp3d_real, kp3d_pred, weights=has3d) * 0.5
                 kp3d_loss = kp3d_loss * self.config.GENERATOR_3D_LOSS_WEIGHT
 
-                """Calculating pose and shape loss basically makes no sense 
+                """Calculating pose and shape loss basically makes no sense
                     due to missing paired 3d and mosh ground truth data.
                     The original implementation has paired data for Human 3.6 M dataset
                     which was not published due to licence conflict.
-                    Nevertheless with SMPLify paired data can be generated 
+                    Nevertheless with SMPLify paired data can be generated
                     (see http://smplify.is.tue.mpg.de/ for more information)
                 """
                 pose_pred = tf.reshape(pose_pred, [batch_size, -1])

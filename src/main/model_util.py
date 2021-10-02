@@ -112,8 +112,8 @@ def batch_skew_symmetric(vector):
     skew_sym = tf.stack(
         [zeros[:, :, 0], -vector[:, :, 2], vector[:, :, 1],
          vector[:, :, 2], zeros[:, :, 1], -vector[:, :, 0],
-         -vector[:, :, 1], vector[:, :, 0], zeros[:, :, 2]]
-        , -1)
+         -vector[:, :, 1], vector[:, :, 0], zeros[:, :, 2]],
+        -1)
     # //@formatter:on
 
     return tf.reshape(skew_sym, [batch_size, num_joints, 3, 3])
