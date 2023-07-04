@@ -55,6 +55,8 @@ class Generator(tf.keras.Model):
         self.config = Config()
 
         self.enc_shape = self.config.ENCODER_INPUT_SHAPE
+        import icecream
+        icecream.ic(self.enc_shape)
         self.resnet50V2 = ResNet50V2(include_top=False, weights='imagenet', input_shape=self.enc_shape, pooling='avg')
         self._set_resnet_arg_scope()
 

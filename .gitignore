@@ -6,3 +6,6 @@
 /src/eval/reports/
 /src/eval/old reports/
 /**/__pycache__/**
+
+models
+test_images

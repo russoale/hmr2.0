@@ -75,29 +75,38 @@ class Model:
         gen_input = ((self.config.BATCH_SIZE,) + self.config.ENCODER_INPUT_SHAPE)
 
         self.generator = Generator()
-        self.generator.build(input_shape=gen_input)
+        import icecream
+        icecream.ic(gen_input)
+        # self.generator.build(input_shape=gen_input)
         self.generator_opt = tf.optimizers.Adam(learning_rate=self.config.GENERATOR_LEARNING_RATE)
 
         if not self.config.ENCODER_ONLY:
             disc_input = (self.config.BATCH_SIZE, self.config.NUM_JOINTS * 9 + self.config.NUM_SHAPE_PARAMS)
 
             self.discriminator = Discriminator()
-            self.discriminator.build(input_shape=disc_input)
+            # self.discriminator.build(input_shape=disc_input)
             self.discriminator_opt = tf.optimizers.Adam(learning_rate=self.config.DISCRIMINATOR_LEARNING_RATE)
 
         # setup checkpoint
         self.checkpoint_prefix = os.path.join(self.config.LOG_DIR, "ckpt")
         if not self.config.ENCODER_ONLY:
-            checkpoint = tf.train.Checkpoint(generator=self.generator,
-                                             discriminator=self.discriminator,
-                                             generator_opt=self.generator_opt,
-                                             discriminator_opt=self.discriminator_opt)
+            checkpoint = tf.train.Checkpoint(
+                generator=self.generator,
+                discriminator=self.discriminator,
+                generator_opt=self.generator_opt,
+                discriminator_opt=self.discriminator_opt)
         else:
-            checkpoint = tf.train.Checkpoint(generator=self.generator,
-                                             generator_opt=self.generator_opt)
+            checkpoint = tf.train.Checkpoint(
+                generator=self.generator,
+                generator_opt=self.generator_opt)
+
+        print("About to create checkpoint manager")
 
         self.checkpoint_manager = tf.train.CheckpointManager(checkpoint, self.config.LOG_DIR, max_to_keep=5)
 
+        print("Created checkpoint manager")
+
+        print("About to restore from latest checkpoint")
         # if a checkpoint exists, restore the latest checkpoint.
         self.restore_check = None
         if self.checkpoint_manager.latest_checkpoint:
@@ -105,8 +114,11 @@ class Model:
             if restore_path is None:
                 restore_path = self.checkpoint_manager.latest_checkpoint
 
+            print("About to restory from latest checkpoint")
             self.restore_check = checkpoint.restore(restore_path).expect_partial()
             print('Checkpoint restored from {}'.format(restore_path))
+        else:
+            print("oh, no checkpoint was available")
 
     def _setup_summary(self):
         self.summary_path = os.path.join(self.config.LOG_DIR, 'hmr2.0', '3D_{}'.format(self.config.USE_3D))
@@ -458,7 +470,7 @@ class Model:
         tf.keras.backend.set_learning_phase(0)
 
         if self.restore_check is None:
-            raise RuntimeError('restore did not succeed, pleas check if you set config.LOG_DIR correctly')
+            raise RuntimeError('restore did not succeed, please check if you set config.LOG_DIR correctly')
 
         if self.config.INITIALIZE_CUSTOM_REGRESSOR:
             self.restore_check.assert_nontrivial_match()

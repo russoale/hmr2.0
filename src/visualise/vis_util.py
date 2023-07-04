@@ -23,6 +23,8 @@ from main.config import Config
 from main.dataset import Dataset
 from main.local import LocalConfig
 
+import visualise.trimesh_renderer
+
 colors = {
     'pink': [197, 27, 125],
     'light_pink': [233, 163, 201],
@@ -164,7 +166,7 @@ def resize_img(img, scale):
     return new_img, actual_factor
 
 
-def visualize(renderer, img, params, verts, cam, joints):
+def visualize(renderer, img: np.ndarray, params: dict, verts, cam, joints):
     """Renders the result in original image coordinate frame."""
 
     vert_shifted, joints_orig = get_original(params, verts, cam, joints)
@@ -172,9 +174,18 @@ def visualize(renderer, img, params, verts, cam, joints):
     # Render results
     img_kp2d = draw_2d_on_image(img, joints_orig)
     img_overlay = renderer(vert_shifted, img=img, bg_color=np.array((255.0, 255.0, 255.0, 1)))
+
+    import icecream
+    icecream.ic(type(img_overlay))
+    icecream.ic(img_overlay.shape)
+
+    cv2.imwrite("/tmp/img_overlay.jpg", img_overlay)
     img_mesh = renderer(vert_shifted, img_size=img.shape[:2])
     img_mesh_rot1 = renderer.rotated(vert_shifted, 60, img_size=img.shape[:2])
     img_mesh_rot2 = renderer.rotated(vert_shifted, -60, img_size=img.shape[:2])
+
+    cv2.imwrite("/tmp/img_overlay_rot1.jpg", img_mesh_rot1)
+    cv2.imwrite("/tmp/img_overlay_rot2.jpg", img_mesh_rot2)
 
     gs = gridspec.GridSpec(2, 3)
     gs.update(wspace=0.25, hspace=0.25)
@@ -194,7 +205,9 @@ def visualize(renderer, img, params, verts, cam, joints):
     put_image_on_axis(img_mesh_rot1, 4, 'rotated 60 degree')
     put_image_on_axis(img_mesh_rot2, 5, 'rotated -60 degree')
 
-    plot.show()
+    plot.savefig('/tmp/testplot.png')
+
+    # plot.show()
 
 
 def draw_2d_on_image(input_image, joints, draw_edges=True, vis=None):

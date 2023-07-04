@@ -1,0 +1,76 @@
+{
+    "BATCH_SIZE": 1,
+    "CUSTOM_REGRESSOR_IDX": {
+        "0": "regressor_toes_right.npy",
+        "7": "regressor_toes_left.npy"
+    },
+    "CUSTOM_REGRESSOR_PATH": "/app/models/regressors",
+    "DATASETS": [
+        "lsp",
+        "lsp_ext",
+        "mpii",
+        "coco",
+        "mpii_3d",
+        "h36m",
+        "total_cap"
+    ],
+    "DATA_DIR": "/data/ssd1/russales/tfrecords",
+    "DISCRIMINATOR_LEARNING_RATE": 0.0001,
+    "DISCRIMINATOR_LOSS_WEIGHT": 1,
+    "DISCRIMINATOR_WEIGHT_DECAY": 0.0001,
+    "DS_KP2D": {
+        "cocoplus": 19,
+        "custom": 21,
+        "lsp": 14
+    },
+    "DS_KP3D": {
+        "cocoplus": 14,
+        "custom": 16,
+        "lsp": 14
+    },
+    "ENCODER_INPUT_SHAPE": [
+        224,
+        224,
+        3
+    ],
+    "ENCODER_ONLY": true,
+    "EPOCHS": 55,
+    "GENERATOR_2D_LOSS_WEIGHT": 60.0,
+    "GENERATOR_3D_LOSS_WEIGHT": 60.0,
+    "GENERATOR_LEARNING_RATE": 1e-05,
+    "GENERATOR_WEIGHT_DECAY": 0.0001,
+    "INITIALIZE_CUSTOM_REGRESSOR": false,
+    "ITERATIONS": 3,
+    "JOINT_TYPE": "cocoplus",
+    "LOG_DIR": "/app/src/logs/paired(joints)/base_model",
+    "NUM_CAMERA_PARAMS": 3,
+    "NUM_JOINTS": 23,
+    "NUM_JOINTS_GLOBAL": 24,
+    "NUM_KP2D": 19,
+    "NUM_KP3D": 14,
+    "NUM_PARALLEL": 16,
+    "NUM_POSE_PARAMS": 72,
+    "NUM_SHAPE_PARAMS": 10,
+    "NUM_SMPL_PARAMS": 85,
+    "NUM_TEST_SAMPLES": 186873,
+    "NUM_TRAINING_SAMPLES": 678442,
+    "NUM_TRAIN_SMPL_SAMPLES": 4116233,
+    "NUM_VALIDATION_SAMPLES": 11463,
+    "NUM_VERTICES": 6890,
+    "RESTORE_EPOCH": null,
+    "RESTORE_PATH": null,
+    "ROOT_DATA_DIR": "/data/ssd1/russales",
+    "ROOT_PROJECT_DIR": "/app",
+    "SCALE_MAX": 1.23,
+    "SCALE_MIN": 0.8,
+    "SEED": 42,
+    "SMPL_DATASETS": [
+        "cmu",
+        "joint_lim"
+    ],
+    "SMPL_DATA_DIR": "/data/ssd1/russales/tfrecords/smpl",
+    "SMPL_MEAN_THETA_PATH": "/app/models/neutral_smpl_mean_params.h5",
+    "SMPL_MODEL_PATH": "/app/models/neutral_smpl_coco_regressor.pkl",
+    "TRANS_MAX": 20,
+    "USE_3D": true
+}

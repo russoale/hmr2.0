@@ -6,7 +6,7 @@ import trimesh.transformations as trans
 from visualise.vis_util import load_faces
 
 
-class TrimeshRenderer(object):
+class TrimeshRenderer:
 
     def __init__(self, img_size=(224, 224), focal_length=5.):
         self.h, self.w = img_size[0], img_size[1]
@@ -20,6 +20,9 @@ class TrimeshRenderer(object):
             img: [h, w, channel] (optional)
             img_size: [h, w] specify frame size of rendered mesh (optional)
         """
+
+        import icecream
+        icecream.ic("Entered TrimeshRenderer.__call__")
 
         if img is not None:
             h, w = img.shape[:2]
@@ -35,7 +38,7 @@ class TrimeshRenderer(object):
         if bg_color is not None:
             bg_color = np.zeros(4)
 
-        image_bytes = scene.save_image(resolution=(w, h), background=bg_color, visible=True)
+        image_bytes = scene.save_image(resolution=(w, h), background=bg_color, visible=False)
         image = cv2.imdecode(np.frombuffer(image_bytes, np.uint8), -1)
 
         if img is not None:
@@ -54,11 +57,13 @@ class TrimeshRenderer(object):
         return image
 
     def mesh(self, verts):
-        mesh = trimesh.Trimesh(vertices=verts, faces=self.faces,
-                               vertex_colors=[200, 255, 255, 255],
-                               face_colors=[0, 0, 0, 0],
-                               use_embree=False,
-                               process=False)
+        mesh = trimesh.Trimesh(
+            vertices=verts,
+            faces=self.faces,
+            vertex_colors=[200, 255, 255, 255],
+            face_colors=[0, 0, 0, 0],
+            use_embree=False,
+            process=False)
 
         # this transform is necessary to get correct image
         # because z axis is other way around in trimesh
