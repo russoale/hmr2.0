@@ -23,8 +23,6 @@ from main.config import Config
 from main.dataset import Dataset
 from main.local import LocalConfig
 
-import visualise.trimesh_renderer
-
 colors = {
     'pink': [197, 27, 125],
     'light_pink': [233, 163, 201],

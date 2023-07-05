@@ -48,6 +48,8 @@ if __name__ == '__main__':
         INITIALIZE_CUSTOM_REGRESSOR = args.init_toes
         JOINT_TYPE = args.joint_type
 
+    print(args)
+
     config = DemoConfig()
 
     # initialize model
